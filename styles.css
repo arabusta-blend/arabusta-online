@@ -229,8 +229,25 @@ h2 { font-size: 1.5rem; margin-bottom: 8px; }
   font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+  min-height: 56px;
 }
+
+/* Поле номера набору: фіксований префікс «ТЕСТ» + цифри, як на наклейці */
+.code-input { position: relative; }
+
+.code-input__prefix {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.code-input .input--code { padding-left: 84px; }
 
 .input--other { margin-top: 10px; }
 

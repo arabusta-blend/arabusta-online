@@ -27,18 +27,21 @@
 
     <form class="survey" id="survey" novalidate>
 
-      <!-- Екран 2. TEST-ID -->
+      <!-- Екран 2. Номер набору (наліпка «ТЕСТ 001») -->
       <section class="screen" id="screen-test-id">
         <header class="screen__header">
           <div class="logo" aria-hidden="true"><span class="logo__name">ARABUSTA</span></div>
         </header>
         <h2>Номер набору</h2>
-        <p class="lead">Вкажіть номер з наклейки на Вашому наборі.</p>
+        <p class="lead">Введіть цифри з наклейки на коробці, наприклад <strong>ТЕСТ 001</strong>.</p>
         <div class="field">
-          <label class="field__label" for="test-id">TEST-ID</label>
-          <input class="input input--code" type="text" id="test-id" name="test_id"
-                 placeholder="TEST-001" autocomplete="off" autocapitalize="characters"
-                 spellcheck="false" required aria-describedby="test-id-error">
+          <label class="field__label" for="test-id">Номер з наклейки</label>
+          <div class="code-input">
+            <span class="code-input__prefix" aria-hidden="true">ТЕСТ</span>
+            <input class="input input--code" type="text" id="test-id" name="test_id"
+                   inputmode="numeric" maxlength="12" placeholder="001" autocomplete="off"
+                   spellcheck="false" required aria-describedby="test-id-error">
+          </div>
           <p class="field__error" id="test-id-error" aria-live="polite"></p>
         </div>
         <div class="actions">
@@ -50,10 +53,10 @@
       <section class="screen" id="screen-survey">
         <header class="screen__header">
           <button type="button" class="btn-back" data-action="back">← Назад</button>
-          <span class="badge" data-test-id-label>TEST-000</span>
+          <span class="badge" data-test-id-label>ТЕСТ 000</span>
         </header>
 
-        <!-- Анкета для набору з 3 зразків (TEST-011…040) -->
+        <!-- Анкета для набору з 3 зразків (ТЕСТ 011…040) -->
         <fieldset class="set" id="set-3" data-set="3">
           <legend class="set__title">Набір із 3 зразків</legend>
 
@@ -160,7 +163,7 @@
           </div>
         </fieldset>
 
-        <!-- Анкета для набору з 5 зразків (TEST-001…010) -->
+        <!-- Анкета для набору з 5 зразків (ТЕСТ 001…010) -->
         <fieldset class="set" id="set-5" data-set="5">
           <legend class="set__title">Набір із 5 зразків</legend>
 
@@ -287,7 +290,7 @@
       <section class="screen" id="screen-contact">
         <header class="screen__header">
           <button type="button" class="btn-back" data-action="back">← Назад</button>
-          <span class="badge" data-test-id-label>TEST-000</span>
+          <span class="badge" data-test-id-label>ТЕСТ 000</span>
         </header>
         <h2>Хочете дізнатися, який купаж переміг?</h2>
         <p class="lead">Залиште Instagram або e-mail — повідомимо після завершення тестування.</p>
