@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f6f1ea">
+  <meta name="theme-color" content="#f7f1e8">
   <title>ARABUSTA — дегустація</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Cinzel:wght@700&display=swap">
   <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
   <main class="app">
 
-    <!-- Екран 1. Старт -->
+    <!-- Screen 1. Start -->
     <section class="screen screen--start" id="screen-start">
       <div class="logo logo--large" aria-label="ARABUSTA COFFEE">
         <span class="logo__name">ARABUSTA</span>
@@ -27,9 +28,9 @@
 
     <form class="survey" id="survey" novalidate>
 
-      <!-- Екран 2. Номер набору (наліпка «ТЕСТ 001») -->
+      <!-- Screen 2. Set number (sticker reads "ТЕСТ 001") -->
       <section class="screen" id="screen-test-id">
-        <header class="screen__header">
+        <header class="screen__header screen__header--center">
           <div class="logo" aria-hidden="true"><span class="logo__name">ARABUSTA</span></div>
         </header>
         <h2>Номер набору</h2>
@@ -49,14 +50,14 @@
         </div>
       </section>
 
-      <!-- Екран 3. Анкета (тип отримувача й місце беруться з адмін-таблиці за TEST-ID) -->
+      <!-- Screen 3. Survey (recipient type and place come from the admin sheet by set number) -->
       <section class="screen" id="screen-survey">
         <header class="screen__header">
           <button type="button" class="btn-back" data-action="back">← Назад</button>
           <span class="badge" data-test-id-label>ТЕСТ 000</span>
         </header>
 
-        <!-- Анкета для набору з 3 зразків (ТЕСТ 011…040) -->
+        <!-- Survey for the 3-sample set (ТЕСТ 011…040) -->
         <fieldset class="set" id="set-3" data-set="3">
           <legend class="set__title">Набір із 3 зразків</legend>
 
@@ -151,7 +152,7 @@
             <p class="field__error" aria-live="polite"></p>
           </fieldset>
 
-          <!-- Показується, лише якщо обрано «Жоден» у першому питанні -->
+          <!-- Shown only when "Жоден" (none) is chosen in the first question -->
           <div class="field" data-show-if-none>
             <label class="field__label" for="wish">Яку каву Ви хотіли б отримати? Що варто змінити? <span class="optional">необов'язково</span></label>
             <textarea class="input textarea" id="wish" name="wish" rows="3"></textarea>
@@ -163,14 +164,14 @@
           </div>
         </fieldset>
 
-        <!-- Анкета для набору з 5 зразків (ТЕСТ 001…010) -->
+        <!-- Survey for the 5-sample set (ТЕСТ 001…010) -->
         <fieldset class="set" id="set-5" data-set="5">
           <legend class="set__title">Набір із 5 зразків</legend>
 
           <p class="lead">Оцініть кожен зразок за шкалою від 1 (слабко) до 5 (відмінно).</p>
 
           <div class="samples">
-            <!-- Картки зразків №01–№05: назви полів s{N}_taste, s{N}_aroma, s{N}_body, s{N}_finish -->
+            <!-- Sample cards №01–№05: field names s{N}_taste, s{N}_aroma, s{N}_body, s{N}_finish -->
             <fieldset class="sample-card" data-required>
               <legend class="sample-card__title">Зразок №01</legend>
               <div class="rating" role="radiogroup" aria-label="№01 — смак"><span class="rating__label">Смак</span><div class="rating__scale"><label><input type="radio" name="s1_taste" value="1"><span>1</span></label><label><input type="radio" name="s1_taste" value="2"><span>2</span></label><label><input type="radio" name="s1_taste" value="3"><span>3</span></label><label><input type="radio" name="s1_taste" value="4"><span>4</span></label><label><input type="radio" name="s1_taste" value="5"><span>5</span></label></div></div>
@@ -286,7 +287,7 @@
         </div>
       </section>
 
-      <!-- Екран 4. Контакт -->
+      <!-- Screen 4. Contact -->
       <section class="screen" id="screen-contact">
         <header class="screen__header">
           <button type="button" class="btn-back" data-action="back">← Назад</button>
@@ -307,7 +308,7 @@
 
     </form>
 
-    <!-- Екран 5. Дякуємо -->
+    <!-- Screen 5. Thank you -->
     <section class="screen screen--start" id="screen-thanks">
       <div class="logo logo--large" aria-label="ARABUSTA COFFEE">
         <span class="logo__name">ARABUSTA</span>
@@ -318,5 +319,29 @@
     </section>
 
   </main>
+
+  <!-- TEMPORARY: theme toggle for design review. Remove before release. -->
+  <button type="button" class="theme-toggle" id="theme-toggle">Тема: авто</button>
+  <script>
+    (function () {
+      var modes = ['auto', 'light', 'dark'];
+      var names = { auto: 'авто', light: 'світла', dark: 'темна' };
+      var btn = document.getElementById('theme-toggle');
+      var mode = 'auto';
+      try { mode = localStorage.getItem('theme') || 'auto'; } catch (e) {}
+      function apply() {
+        if (mode === 'auto') document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', mode);
+        btn.textContent = 'Тема: ' + names[mode];
+      }
+      btn.addEventListener('click', function () {
+        mode = modes[(modes.indexOf(mode) + 1) % modes.length];
+        try { localStorage.setItem('theme', mode); } catch (e) {}
+        apply();
+      });
+      apply();
+    })();
+  </script>
+  <!-- /TEMPORARY -->
 </body>
 </html>

@@ -1,37 +1,89 @@
-/* Палітра-заглушка. Замініть на фірмові кольори ARABUSTA, коли вони будуть. */
+/* Palette based on the ARABUSTA COFFEE logo: brown, gold, green. */
 :root {
-  --bg: #f6f1ea;
-  --surface: #fffdfa;
-  --fg: #2b1d14;
-  --muted: #7a6a5e;
-  --accent: #6f4326;
-  --accent-fg: #fffdfa;
-  --accent-soft: #efe2d4;
-  --border: #e3d7c9;
+  --bg: #f7f1e8;
+  --surface: #fffdf8;
+  --fg: #2a160b;
+  --muted: #7b6556;
+  --accent: #6b3416;
+  --accent-fg: #fffdf8;
+  --accent-soft: #f0e2d0;
+  --border: #e5d6c2;
+  --gold: #b98232;
+  --green: #4c7f2a;
+  --logo-fill: #5e2c12;
   --error: #b42318;
   --radius: 14px;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Playfair Display', Georgia, serif;
+  --font-logo: 'Cinzel', 'Playfair Display', Georgia, serif; /* Latin only (no Cyrillic) */
 }
 
+/* Dark theme mirrors the black version of the logo */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1a130e;
-    --surface: #251b14;
-    --fg: #f3ebe2;
-    --muted: #b3a294;
-    --accent: #d9a57a;
-    --accent-fg: #1a130e;
-    --accent-soft: #3a2a1f;
-    --border: #3f2f24;
+  :root:not([data-theme="light"]) {
+    --bg: #0e0a07;
+    --surface: #1b130d;
+    --fg: #f4ebdf;
+    --muted: #b5a08c;
+    --accent: #c9933f;
+    --accent-fg: #0e0a07;
+    --accent-soft: #2e2114;
+    --border: #3a2a1c;
+    --gold: #d7a24e;
+    --green: #7fae4a;
+    --logo-fill: #7a3d1a;
+    --logo-small: var(--gold); /* plain brown blends into the black background */
     --error: #f97066;
     color-scheme: dark;
   }
 }
 
+/* TEMPORARY: forced theme for the toggle (copy of the dark tokens above). Remove together with .theme-toggle */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] {
+  --bg: #0e0a07;
+  --surface: #1b130d;
+  --fg: #f4ebdf;
+  --muted: #b5a08c;
+  --accent: #c9933f;
+  --accent-fg: #0e0a07;
+  --accent-soft: #2e2114;
+  --border: #3a2a1c;
+  --gold: #d7a24e;
+  --green: #7fae4a;
+  --logo-fill: #7a3d1a;
+  --logo-small: var(--gold);
+  --error: #f97066;
+  color-scheme: dark;
+}
+
+.theme-toggle {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+}
+/* /TEMPORARY */
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }
+
+/* Component display rules must not override the hidden attribute */
+[hidden] { display: none !important; }
+
+/* Headings get programmatic focus on screen change; no visible ring needed */
+[tabindex="-1"]:focus { outline: none; }
 
 body {
   background: var(--bg);
@@ -49,13 +101,11 @@ body {
   padding: 16px 16px 40px;
 }
 
-/* ---------- Екрани ---------- */
+/* ---------- Screens ---------- */
 
 .screen {
   padding: 24px 0 32px;
 }
-
-.screen[hidden] { display: none; }
 
 .screen--start {
   min-height: 80vh;
@@ -76,7 +126,9 @@ body {
   margin-bottom: 16px;
 }
 
-/* ---------- Логотип (текстова заглушка) ---------- */
+.screen__header--center { justify-content: center; }
+
+/* ---------- Logo (text placeholder) ---------- */
 
 .logo {
   display: inline-flex;
@@ -87,26 +139,52 @@ body {
 }
 
 .logo__name {
-  font-family: var(--font-display);
+  font-family: var(--font-logo);
   font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: 0.12em;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  color: var(--logo-small, var(--logo-fill));
 }
 
+/* Green "COFFEE" with side lines, as in the logo */
 .logo__sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: 6px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.5em;
-  padding-left: 0.5em;
-  color: var(--accent);
+  font-family: var(--font-logo);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  color: var(--green);
+}
+
+.logo__sub::before,
+.logo__sub::after {
+  content: "";
+  width: 40px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--green));
+}
+
+.logo__sub::after {
+  background: linear-gradient(90deg, var(--green), transparent);
+  margin-left: -0.4em; /* offsets letter-spacing after the last letter */
 }
 
 .logo--large { margin-bottom: 40px; }
-.logo--large .logo__name { font-size: 2.25rem; }
-.logo--large .logo__sub { font-size: 0.8rem; margin-top: 10px; }
+.logo--large .logo__name {
+  font-size: 2.6rem;
+  color: var(--logo-fill);
+  -webkit-text-stroke: 1px var(--gold);
+  paint-order: stroke fill;
+}
+.logo--large .logo__sub { font-size: 0.95rem; margin-top: 10px; }
+.logo--large .logo__sub::before,
+.logo--large .logo__sub::after { width: 64px; }
 
-/* ---------- Типографіка ---------- */
+/* ---------- Typography ---------- */
 
 h1, h2 {
   font-family: var(--font-display);
@@ -147,7 +225,7 @@ h2 { font-size: 1.5rem; margin-bottom: 8px; }
   border-radius: 100px;
 }
 
-/* ---------- Кнопки ---------- */
+/* ---------- Buttons ---------- */
 
 .btn {
   display: inline-flex;
@@ -193,7 +271,7 @@ h2 { font-size: 1.5rem; margin-bottom: 8px; }
 
 .actions { margin-top: 32px; }
 
-/* ---------- Поля ---------- */
+/* ---------- Fields ---------- */
 
 .field { margin-bottom: 24px; }
 
@@ -209,7 +287,7 @@ h2 { font-size: 1.5rem; margin-bottom: 8px; }
   min-height: 48px;
   padding: 12px 14px;
   font: inherit;
-  font-size: 16px; /* не менше 16px, щоб iOS не збільшував сторінку */
+  font-size: 16px; /* at least 16px so iOS does not zoom in on focus */
   color: var(--fg);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -232,7 +310,7 @@ h2 { font-size: 1.5rem; margin-bottom: 8px; }
   min-height: 56px;
 }
 
-/* Поле номера набору: фіксований префікс «ТЕСТ» + цифри, як на наклейці */
+/* Set number field: fixed "ТЕСТ" prefix + digits, as on the sticker */
 .code-input { position: relative; }
 
 .code-input__prefix {
@@ -264,7 +342,7 @@ h2 { font-size: 1.5rem; margin-bottom: 8px; }
 .is-invalid .input,
 .input.is-invalid { border-color: var(--error); }
 
-/* ---------- Питання і варіанти ---------- */
+/* ---------- Questions and options ---------- */
 
 fieldset { border: 0; min-width: 0; }
 
@@ -348,7 +426,7 @@ fieldset { border: 0; min-width: 0; }
 .is-invalid .option span,
 .is-invalid .rating__scale span { border-color: var(--error); }
 
-/* ---------- Оцінки 1–5 (набір із 5 зразків) ---------- */
+/* ---------- 1–5 ratings (5-sample set) ---------- */
 
 .samples {
   display: grid;
@@ -364,7 +442,7 @@ fieldset { border: 0; min-width: 0; }
 }
 
 .sample-card__title {
-  float: left; /* прибирає legend з рамки fieldset */
+  float: left; /* pulls the legend out of the fieldset border */
   width: 100%;
   font-family: var(--font-display);
   font-size: 1.125rem;
@@ -416,7 +494,7 @@ fieldset { border: 0; min-width: 0; }
   color: var(--accent-fg);
 }
 
-/* На ширших екранах підпис і шкала в один рядок */
+/* On wider screens: label and scale on one row */
 @media (min-width: 420px) {
   .rating {
     display: grid;
@@ -427,7 +505,7 @@ fieldset { border: 0; min-width: 0; }
   .rating__label { margin-bottom: 0; }
 }
 
-/* ---------- Статус відправки ---------- */
+/* ---------- Submit status ---------- */
 
 .form-status {
   margin-top: 16px;
