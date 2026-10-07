@@ -45,37 +45,7 @@
         </div>
       </section>
 
-      <!-- Екран 3. Про вас -->
-      <section class="screen" id="screen-about">
-        <header class="screen__header">
-          <button type="button" class="btn-back" data-action="back">← Назад</button>
-          <span class="badge" data-test-id-label>TEST-000</span>
-        </header>
-        <h2>Про Вас</h2>
-
-        <fieldset class="question" data-required>
-          <legend class="question__title">Хто Ви?</legend>
-          <div class="options options--stack">
-            <label class="option"><input type="radio" name="respondent_type" value="Кавова точка"><span>Кавова точка</span></label>
-            <label class="option"><input type="radio" name="respondent_type" value="Професійний дегустатор"><span>Професійний дегустатор</span></label>
-            <label class="option"><input type="radio" name="respondent_type" value="Приватна особа"><span>Приватна особа</span></label>
-            <label class="option"><input type="radio" name="respondent_type" value="Інше" data-other><span>Інше</span></label>
-          </div>
-          <input class="input input--other" type="text" name="respondent_type_other" placeholder="Уточніть, будь ласка" aria-label="Інше: уточніть">
-          <p class="field__error" aria-live="polite"></p>
-        </fieldset>
-
-        <div class="field">
-          <label class="field__label" for="place">Заклад або місто <span class="optional">необов'язково</span></label>
-          <input class="input" type="text" id="place" name="place" placeholder="Напр. «Кава на Подолі», Київ" autocomplete="off">
-        </div>
-
-        <div class="actions">
-          <button type="button" class="btn btn--primary" data-action="next">Далі</button>
-        </div>
-      </section>
-
-      <!-- Екран 4. Анкета -->
+      <!-- Екран 3. Анкета (тип отримувача й місце беруться з адмін-таблиці за TEST-ID) -->
       <section class="screen" id="screen-survey">
         <header class="screen__header">
           <button type="button" class="btn-back" data-action="back">← Назад</button>
@@ -312,7 +282,7 @@
         </div>
       </section>
 
-      <!-- Екран 5. Контакт -->
+      <!-- Екран 4. Контакт -->
       <section class="screen" id="screen-contact">
         <header class="screen__header">
           <button type="button" class="btn-back" data-action="back">← Назад</button>
@@ -333,7 +303,7 @@
 
     </form>
 
-    <!-- Екран 6. Дякуємо -->
+    <!-- Екран 5. Дякуємо -->
     <section class="screen screen--start" id="screen-thanks">
       <div class="logo logo--large" aria-label="ARABUSTA COFFEE">
         <span class="logo__name">ARABUSTA</span>
