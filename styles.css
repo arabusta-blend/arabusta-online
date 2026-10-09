@@ -82,6 +82,8 @@
 
 html { -webkit-text-size-adjust: 100%; }
 
+img { max-width: 100%; height: auto; }
+
 /* Component display rules must not override the hidden attribute */
 [hidden] { display: none !important; }
 
