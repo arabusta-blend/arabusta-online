@@ -17,10 +17,7 @@
 
     <!-- Screen 1. Start -->
     <section class="screen screen--start" id="screen-start">
-      <div class="logo logo--large" aria-label="ARABUSTA COFFEE">
-        <span class="logo__name">ARABUSTA</span>
-        <span class="logo__sub">COFFEE</span>
-      </div>
+      <img class="logo-img" src="assets/logo.webp" width="440" height="440" alt="ARABUSTA COFFEE">
       <h1>Дегустація нових купажів</h1>
       <p class="lead">Оцініть зразки з Вашого набору — це займе до 2 хвилин. Реєстрація не потрібна.</p>
       <button type="button" class="btn btn--primary" data-action="start">Оцінити каву</button>
@@ -300,6 +297,27 @@
           <input class="input" type="text" id="contact" name="contact" placeholder="@arabusta або name@mail.com"
                  autocomplete="email" autocapitalize="off" spellcheck="false">
         </div>
+
+        <!-- Consent to process the contact: shown and required only while the contact field is filled -->
+        <div class="consent" id="consent-block" hidden>
+          <label class="consent__label">
+            <input type="checkbox" id="consent" name="consent" value="так" aria-describedby="consent-error">
+            <span>Погоджуюсь, що ARABUSTA використає мій контакт лише для того, щоб повідомити результати дегустації. Контакт буде видалено після завершення тестування.</span>
+          </label>
+          <p class="field__error" id="consent-error" aria-live="polite"></p>
+          <!-- TODO: replace the bracketed placeholders with the real legal name and e-mail -->
+          <details class="consent__details">
+            <summary>Детальніше</summary>
+            <ul>
+              <li><strong>Хто збирає дані:</strong> [назва ТОВ / ФОП], бренд ARABUSTA COFFEE.</li>
+              <li><strong>Для чого:</strong> лише щоб повідомити Вам результати дегустації.</li>
+              <li><strong>Де зберігаються:</strong> у захищеній Google-таблиці, доступ до якої має лише команда ARABUSTA.</li>
+              <li><strong>Як довго:</strong> до завершення тестування, після чого контакт видаляється.</li>
+              <li><strong>Як відкликати згоду:</strong> напишіть на [e-mail] — ми видалимо Ваш контакт.</li>
+            </ul>
+          </details>
+        </div>
+
         <p class="form-status" id="form-status" aria-live="polite"></p>
         <div class="actions">
           <button type="submit" class="btn btn--primary">Надіслати</button>
@@ -310,10 +328,7 @@
 
     <!-- Screen 5. Thank you -->
     <section class="screen screen--start" id="screen-thanks">
-      <div class="logo logo--large" aria-label="ARABUSTA COFFEE">
-        <span class="logo__name">ARABUSTA</span>
-        <span class="logo__sub">COFFEE</span>
-      </div>
+      <img class="logo-img" src="assets/logo.webp" width="440" height="440" alt="ARABUSTA COFFEE">
       <h1>Дякуємо!</h1>
       <p class="lead">Ваші відповіді збережено. Вони допоможуть нам обрати найкращий купаж.</p>
     </section>

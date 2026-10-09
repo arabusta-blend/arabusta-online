@@ -12,12 +12,16 @@
     radio: 'Оберіть варіант.',
     checkbox: 'Оберіть хоча б один варіант.',
     rating: 'Оцініть усі чотири параметри.',
-    other: 'Уточніть, будь ласка.'
+    other: 'Уточніть, будь ласка.',
+    consent: 'Підтвердіть згоду або очистіть поле контакту.'
   };
 
   var form = document.getElementById('survey');
   var testIdInput = document.getElementById('test-id');
   var testIdError = document.getElementById('test-id-error');
+  var contactInput = document.getElementById('contact');
+  var consentBlock = document.getElementById('consent-block');
+  var consentInput = document.getElementById('consent');
   var sets = {
     3: document.getElementById('set-3'),
     5: document.getElementById('set-5')
@@ -233,6 +237,30 @@
     return true;
   }
 
+  // ---------- Contact consent ----------
+
+  // Consent is asked only while a contact is entered; clearing the contact withdraws it.
+  contactInput.addEventListener('input', function () {
+    var hasContact = Boolean(contactInput.value.trim());
+    consentBlock.hidden = !hasContact;
+    if (!hasContact) {
+      consentInput.checked = false;
+      clearError(consentBlock);
+    }
+  });
+
+  consentInput.addEventListener('change', function () {
+    if (consentInput.checked) clearError(consentBlock);
+  });
+
+  function validateConsent() {
+    if (!contactInput.value.trim() || consentInput.checked) return true;
+    setError(consentBlock, MESSAGES.consent);
+    consentBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    consentInput.focus({ preventScroll: true });
+    return false;
+  }
+
   // ---------- Answers ----------
 
   // Collects enabled fields into a flat object; multi-select values are joined with ", ".
@@ -252,6 +280,7 @@
     event.preventDefault();
     // Enter in a text field submits the form: treat it as "Далі" before the last screen.
     if (screens[state.screen].id !== 'screen-contact') return goNext();
+    if (!validateConsent()) return;
 
     var answers = collectAnswers();
     // TODO(step 3): send answers to Google Apps Script instead of logging.
