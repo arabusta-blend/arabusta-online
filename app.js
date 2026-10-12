@@ -1,33 +1,29 @@
 (function () {
   'use strict';
 
-  // Sets ТЕСТ 001…010 have 5 samples, ТЕСТ 011…040 have 3.
-  var SET_MIN = 1;
-  var SET_MAX = 40;
+  // Any three digits are accepted. Sets 001…010 have 5 samples, every other number has 3.
+  var TEST_ID_LENGTH = 3;
+  var FIRST_FIVE_SAMPLE_SET = 1;
   var LAST_FIVE_SAMPLE_SET = 10;
 
   var MESSAGES = {
     testIdEmpty: 'Введіть цифри з наклейки.',
-    testIdRange: 'Набору з таким номером немає. Перевірте цифри на наклейці (від 001 до 040).',
+    testIdLength: 'Номер має складатися з трьох цифр, наприклад 001.',
     radio: 'Оберіть варіант.',
     checkbox: 'Оберіть хоча б один варіант.',
     rating: 'Оцініть усі чотири параметри.',
-    other: 'Уточніть, будь ласка.',
-    consent: 'Підтвердіть згоду або очистіть поле контакту.'
+    other: 'Уточніть, будь ласка.'
   };
 
   var form = document.getElementById('survey');
   var testIdInput = document.getElementById('test-id');
   var testIdError = document.getElementById('test-id-error');
-  var contactInput = document.getElementById('contact');
-  var consentBlock = document.getElementById('consent-block');
-  var consentInput = document.getElementById('consent');
   var sets = {
     3: document.getElementById('set-3'),
     5: document.getElementById('set-5')
   };
 
-  var screens = ['screen-start', 'screen-test-id', 'screen-survey', 'screen-contact', 'screen-thanks']
+  var screens = ['screen-start', 'screen-test-id', 'screen-survey', 'screen-thanks']
     .map(function (id) { return document.getElementById(id); });
 
   var state = { screen: 0, testId: null, setType: null };
@@ -49,7 +45,6 @@
     var current = screens[state.screen];
     if (current.id === 'screen-start') return showScreen(1);
     if (current.id === 'screen-test-id' && acceptTestId()) return showScreen(2);
-    if (current.id === 'screen-survey' && validateSection(current)) return showScreen(3);
   }
 
   function goBack() {
@@ -58,17 +53,16 @@
 
   // ---------- Set number ----------
 
-  // Keeps only digits, so "ТЕСТ 001", "TEST-001" and "001" all become "001".
+  // Keeps only digits, so a pasted sticker text like "ТЕСТ 001" becomes "001".
   function digitsOf(value) {
-    return value.replace(/\D/g, '').slice(0, 3);
+    return value.replace(/\D/g, '').slice(0, TEST_ID_LENGTH);
   }
 
   function normalizeTestId(value) {
     var digits = digitsOf(value);
     if (!digits) return { error: MESSAGES.testIdEmpty };
-    var number = parseInt(digits, 10);
-    if (number < SET_MIN || number > SET_MAX) return { error: MESSAGES.testIdRange };
-    return { id: 'ТЕСТ ' + String(number).padStart(3, '0'), number: number };
+    if (digits.length !== TEST_ID_LENGTH) return { error: MESSAGES.testIdLength };
+    return { id: digits, number: parseInt(digits, 10) };
   }
 
   function acceptTestId() {
@@ -81,10 +75,10 @@
     }
     testIdError.textContent = '';
     testIdInput.classList.remove('is-invalid');
-    testIdInput.value = result.id.slice(5);
 
     state.testId = result.id;
-    activateSet(result.number <= LAST_FIVE_SAMPLE_SET ? 5 : 3);
+    var isFiveSampleSet = result.number >= FIRST_FIVE_SAMPLE_SET && result.number <= LAST_FIVE_SAMPLE_SET;
+    activateSet(isFiveSampleSet ? 5 : 3);
     document.querySelectorAll('[data-test-id-label]').forEach(function (el) {
       el.textContent = result.id;
     });
@@ -98,12 +92,6 @@
       testIdError.textContent = '';
       testIdInput.classList.remove('is-invalid');
     }
-  });
-
-  // Pad to the sticker format on blur: "1" -> "001".
-  testIdInput.addEventListener('blur', function () {
-    var digits = digitsOf(testIdInput.value);
-    if (digits) testIdInput.value = digits.padStart(3, '0');
   });
 
   // Both sets share field names; the inactive one is disabled so it is
@@ -237,30 +225,6 @@
     return true;
   }
 
-  // ---------- Contact consent ----------
-
-  // Consent is asked only while a contact is entered; clearing the contact withdraws it.
-  contactInput.addEventListener('input', function () {
-    var hasContact = Boolean(contactInput.value.trim());
-    consentBlock.hidden = !hasContact;
-    if (!hasContact) {
-      consentInput.checked = false;
-      clearError(consentBlock);
-    }
-  });
-
-  consentInput.addEventListener('change', function () {
-    if (consentInput.checked) clearError(consentBlock);
-  });
-
-  function validateConsent() {
-    if (!contactInput.value.trim() || consentInput.checked) return true;
-    setError(consentBlock, MESSAGES.consent);
-    consentBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    consentInput.focus({ preventScroll: true });
-    return false;
-  }
-
   // ---------- Answers ----------
 
   // Collects enabled fields into a flat object; multi-select values are joined with ", ".
@@ -278,14 +242,22 @@
 
   form.addEventListener('submit', function (event) {
     event.preventDefault();
-    // Enter in a text field submits the form: treat it as "Далі" before the last screen.
-    if (screens[state.screen].id !== 'screen-contact') return goNext();
-    if (!validateConsent()) return;
+    // Enter in the set number field submits the form: treat it as "Далі".
+    var current = screens[state.screen];
+    if (current.id !== 'screen-survey') return goNext();
+    if (!validateSection(current)) return;
 
     var answers = collectAnswers();
     // TODO(step 3): send answers to Google Apps Script instead of logging.
     console.log('Survey answers', answers);
-    showScreen(4);
+    showScreen(3);
+  });
+
+  // Enter in a survey text field must not submit the whole survey by accident.
+  form.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' && event.target.matches('#screen-survey input[type="text"]')) {
+      event.preventDefault();
+    }
   });
 
   // ---------- Buttons ----------

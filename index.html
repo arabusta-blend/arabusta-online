@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Cinzel:wght@700&display=swap">
   <!-- Bump ?v= on every CSS/JS change so browsers do not serve a stale cached copy -->
-  <link rel="stylesheet" href="styles.css?v=3">
-  <script src="app.js?v=3" defer></script>
+  <link rel="stylesheet" href="styles.css?v=7">
+  <script src="app.js?v=7" defer></script>
 </head>
 <body>
   <main class="app">
@@ -20,7 +20,13 @@
     <section class="screen screen--start" id="screen-start">
       <img class="logo-img" src="assets/logo.webp" width="440" height="440" alt="ARABUSTA COFFEE">
       <h1>Дегустація нових купажів</h1>
-      <p class="lead">Оцініть зразки з Вашого набору — це займе до 2 хвилин. Реєстрація не потрібна.</p>
+      <div class="intro">
+        <p>Ми створюємо каву, яка повинна подобатися вам, а не лише нам, тому <strong class="intro__accent">ВАША ДУМКА МАЄ ЗНАЧЕННЯ!</strong></p>
+        <p>Просимо чесно та об'єктивно оцінити зразки кави з Вашого набору — це займе до 2 хвилин.
+          Ваші враження допоможуть нам обрати найкращі купажі ARABUSTA.</p>
+        <p>Дякуємо, що допомагаєте нам ставати кращими!</p>
+        <p class="intro__note">P.S. Реєстрація не потрібна</p>
+      </div>
       <button type="button" class="btn btn--primary" data-action="start">Оцінити каву</button>
     </section>
 
@@ -32,15 +38,11 @@
           <div class="logo" aria-hidden="true"><span class="logo__name">ARABUSTA</span></div>
         </header>
         <h2>Номер набору</h2>
-        <p class="lead">Введіть цифри з наклейки на коробці, наприклад <strong>ТЕСТ 001</strong>.</p>
         <div class="field">
-          <label class="field__label" for="test-id">Номер з наклейки</label>
-          <div class="code-input">
-            <span class="code-input__prefix" aria-hidden="true">ТЕСТ</span>
-            <input class="input input--code" type="text" id="test-id" name="test_id"
-                   inputmode="numeric" maxlength="12" placeholder="001" autocomplete="off"
-                   spellcheck="false" required aria-describedby="test-id-error">
-          </div>
+          <label class="field__label" for="test-id">Введіть, будь ласка, номер з наклейки</label>
+          <input class="input input--code" type="text" id="test-id" name="test_id"
+                 inputmode="numeric" maxlength="12" autocomplete="off"
+                 spellcheck="false" required aria-describedby="test-id-error">
           <p class="field__error" id="test-id-error" aria-live="polite"></p>
         </div>
         <div class="actions">
@@ -52,10 +54,10 @@
       <section class="screen" id="screen-survey">
         <header class="screen__header">
           <button type="button" class="btn-back" data-action="back">← Назад</button>
-          <span class="badge" data-test-id-label>ТЕСТ 000</span>
+          <span class="badge" data-test-id-label>000</span>
         </header>
 
-        <!-- Survey for the 3-sample set (ТЕСТ 011…040) -->
+        <!-- Survey for the 3-sample set (any number outside 001…010) -->
         <fieldset class="set" id="set-3" data-set="3">
           <legend class="set__title">Набір із 3 зразків</legend>
 
@@ -162,7 +164,7 @@
           </div>
         </fieldset>
 
-        <!-- Survey for the 5-sample set (ТЕСТ 001…010) -->
+        <!-- Survey for the 5-sample set (001…010) -->
         <fieldset class="set" id="set-5" data-set="5">
           <legend class="set__title">Набір із 5 зразків</legend>
 
@@ -280,45 +282,6 @@
           </div>
         </fieldset>
 
-        <div class="actions">
-          <button type="button" class="btn btn--primary" data-action="next">Далі</button>
-        </div>
-      </section>
-
-      <!-- Screen 4. Contact -->
-      <section class="screen" id="screen-contact">
-        <header class="screen__header">
-          <button type="button" class="btn-back" data-action="back">← Назад</button>
-          <span class="badge" data-test-id-label>ТЕСТ 000</span>
-        </header>
-        <h2>Хочете дізнатися, який купаж переміг?</h2>
-        <p class="lead">Залиште Instagram або e-mail — повідомимо після завершення тестування.</p>
-        <div class="field">
-          <label class="field__label" for="contact">Instagram або e-mail <span class="optional">необов'язково</span></label>
-          <input class="input" type="text" id="contact" name="contact" placeholder="@arabusta або name@mail.com"
-                 autocomplete="email" autocapitalize="off" spellcheck="false">
-        </div>
-
-        <!-- Consent to process the contact: shown and required only while the contact field is filled -->
-        <div class="consent" id="consent-block" hidden>
-          <label class="consent__label">
-            <input type="checkbox" id="consent" name="consent" value="так" aria-describedby="consent-error">
-            <span>Погоджуюсь, що ARABUSTA використає мій контакт лише для того, щоб повідомити результати дегустації. Контакт буде видалено після завершення тестування.</span>
-          </label>
-          <p class="field__error" id="consent-error" aria-live="polite"></p>
-          <!-- TODO: replace the bracketed placeholders with the real legal name and e-mail -->
-          <details class="consent__details">
-            <summary>Детальніше</summary>
-            <ul>
-              <li><strong>Хто збирає дані:</strong> [назва ТОВ / ФОП], бренд ARABUSTA COFFEE.</li>
-              <li><strong>Для чого:</strong> лише щоб повідомити Вам результати дегустації.</li>
-              <li><strong>Де зберігаються:</strong> у захищеній Google-таблиці, доступ до якої має лише команда ARABUSTA.</li>
-              <li><strong>Як довго:</strong> до завершення тестування, після чого контакт видаляється.</li>
-              <li><strong>Як відкликати згоду:</strong> напишіть на [e-mail] — ми видалимо Ваш контакт.</li>
-            </ul>
-          </details>
-        </div>
-
         <p class="form-status" id="form-status" aria-live="polite"></p>
         <div class="actions">
           <button type="submit" class="btn btn--primary">Надіслати</button>
@@ -327,7 +290,7 @@
 
     </form>
 
-    <!-- Screen 5. Thank you -->
+    <!-- Screen 4. Thank you -->
     <section class="screen screen--start" id="screen-thanks">
       <img class="logo-img" src="assets/logo.webp" width="440" height="440" alt="ARABUSTA COFFEE">
       <h1>Дякуємо!</h1>
