@@ -490,6 +490,18 @@ fieldset { border: 0; min-width: 0; }
   .rating__label { margin-bottom: 0; }
 }
 
+/* ---------- Demo mode banner ---------- */
+
+.demo-banner {
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* ---------- Submit status ---------- */
 
 .form-status {

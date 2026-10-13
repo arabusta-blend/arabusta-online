@@ -1,14 +1,23 @@
 (function () {
   'use strict';
 
-  // Any three digits are accepted. Sets 001…010 have 5 samples, every other number has 3.
-  var TEST_ID_LENGTH = 3;
-  var FIRST_FIVE_SAMPLE_SET = 1;
-  var LAST_FIVE_SAMPLE_SET = 10;
+  // Google Apps Script web app URL (Deploy → Web app → URL ending in /exec).
+  // Empty = demo mode: any 4-digit code is accepted, "5555" opens the 5-sample survey,
+  // and answers are only logged to the console.
+  var SCRIPT_URL = '';
+  var DEMO = !SCRIPT_URL;
+  var REQUEST_TIMEOUT_MS = 20000;
+  var DEMO_SAMPLES = { 3: ['№01', '№02', '№03'], 5: ['№01', '№02', '№03', '№04', '№05'] };
+
+  // Valid codes and their sample numbers live only in the «Набори» sheet; the script checks them.
+  var CODE_LENGTH = 4;
 
   var MESSAGES = {
-    testIdEmpty: 'Введіть цифри з наклейки.',
-    testIdLength: 'Номер має складатися з трьох цифр, наприклад 001.',
+    testIdEmpty: 'Введіть код з коробки.',
+    testIdLength: 'Код має складатися з чотирьох цифр.',
+    testIdUnknown: 'Такого коду немає. Перевірте цифри на коробці.',
+    checkFailed: 'Не вдалося перевірити код. Перевірте інтернет і спробуйте ще раз.',
+    submitFailed: 'Не вдалося надіслати відповіді. Перевірте інтернет і спробуйте ще раз.',
     radio: 'Оберіть варіант.',
     checkbox: 'Оберіть хоча б один варіант.',
     rating: 'Оцініть усі чотири параметри.',
@@ -18,6 +27,9 @@
   var form = document.getElementById('survey');
   var testIdInput = document.getElementById('test-id');
   var testIdError = document.getElementById('test-id-error');
+  var nextButton = document.querySelector('#screen-test-id [data-action="next"]');
+  var submitButton = form.querySelector('button[type="submit"]');
+  var formStatus = document.getElementById('form-status');
   var sets = {
     3: document.getElementById('set-3'),
     5: document.getElementById('set-5')
@@ -26,7 +38,7 @@
   var screens = ['screen-start', 'screen-test-id', 'screen-survey', 'screen-thanks']
     .map(function (id) { return document.getElementById(id); });
 
-  var state = { screen: 0, testId: null, setType: null };
+  var state = { screen: 0, testId: null, setType: null, busy: false };
 
   // ---------- Screens ----------
 
@@ -44,45 +56,153 @@
   function goNext() {
     var current = screens[state.screen];
     if (current.id === 'screen-start') return showScreen(1);
-    if (current.id === 'screen-test-id' && acceptTestId()) return showScreen(2);
+    if (current.id === 'screen-test-id') checkTestId();
   }
 
   function goBack() {
+    if (state.busy) return;
     if (state.screen > 1) showScreen(state.screen - 1);
+  }
+
+  // ---------- Server ----------
+
+  function withTimeout(promise) {
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () { reject(new Error('timeout')); }, REQUEST_TIMEOUT_MS);
+      promise.then(
+        function (value) { clearTimeout(timer); resolve(value); },
+        function (error) { clearTimeout(timer); reject(error); }
+      );
+    });
+  }
+
+  function readJson(response) {
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.json();
+  }
+
+  // Resolves to { valid, samples } where samples are the set's sample numbers, e.g. ['№02', '№04', '№05'].
+  function requestCodeCheck(code) {
+    if (DEMO) return Promise.resolve({ ok: true, valid: true, samples: DEMO_SAMPLES[code === '5555' ? 5 : 3] });
+    var url = SCRIPT_URL + '?action=check&code=' + encodeURIComponent(code);
+    return withTimeout(fetch(url).then(readJson)).then(function (result) {
+      if (!result.ok) throw new Error(result.error || 'check_failed');
+      return result;
+    });
+  }
+
+  // text/plain avoids a CORS preflight, which Apps Script does not answer.
+  function requestSubmit(answers) {
+    if (DEMO) {
+      console.log('Demo mode, answers not saved:', answers);
+      return Promise.resolve({ ok: true });
+    }
+    return withTimeout(fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(answers)
+    }).then(readJson)).then(function (result) {
+      if (!result.ok) throw new Error(result.error || 'submit_failed');
+      return result;
+    });
+  }
+
+  function setBusy(button, busy, busyLabel) {
+    state.busy = busy;
+    button.disabled = busy;
+    if (busy) {
+      button.dataset.label = button.dataset.label || button.textContent;
+      button.textContent = busyLabel;
+    } else if (button.dataset.label) {
+      button.textContent = button.dataset.label;
+    }
   }
 
   // ---------- Set number ----------
 
-  // Keeps only digits, so a pasted sticker text like "ТЕСТ 001" becomes "001".
+  // Keeps only digits, so pasted text with spaces or letters still works.
   function digitsOf(value) {
-    return value.replace(/\D/g, '').slice(0, TEST_ID_LENGTH);
+    return value.replace(/\D/g, '').slice(0, CODE_LENGTH);
   }
 
+  // Format check only; whether the code exists is decided by the script.
   function normalizeTestId(value) {
     var digits = digitsOf(value);
     if (!digits) return { error: MESSAGES.testIdEmpty };
-    if (digits.length !== TEST_ID_LENGTH) return { error: MESSAGES.testIdLength };
-    return { id: digits, number: parseInt(digits, 10) };
+    if (digits.length !== CODE_LENGTH) return { error: MESSAGES.testIdLength };
+    return { id: digits };
   }
 
-  function acceptTestId() {
+  function showTestIdError(message) {
+    testIdError.textContent = message;
+    testIdInput.classList.add('is-invalid');
+    testIdInput.focus();
+  }
+
+  function checkTestId() {
+    if (state.busy) return;
     var result = normalizeTestId(testIdInput.value);
-    if (result.error) {
-      testIdError.textContent = result.error;
-      testIdInput.classList.add('is-invalid');
-      testIdInput.focus();
-      return false;
-    }
+    if (result.error) return showTestIdError(result.error);
+
+    setBusy(nextButton, true, 'Перевіряємо…');
+    requestCodeCheck(result.id)
+      .then(function (check) {
+        setBusy(nextButton, false);
+        if (!check.valid) return showTestIdError(MESSAGES.testIdUnknown);
+        var samples = check.samples || [];
+        if (!sets[samples.length]) throw new Error('unexpected sample count: ' + samples.length);
+        acceptTestId(result.id, samples);
+        showScreen(2);
+      })
+      .catch(function (error) {
+        console.error('Code check failed:', error);
+        setBusy(nextButton, false);
+        showTestIdError(MESSAGES.checkFailed);
+      });
+  }
+
+  function acceptTestId(code, samples) {
     testIdError.textContent = '';
     testIdInput.classList.remove('is-invalid');
-
-    state.testId = result.id;
-    var isFiveSampleSet = result.number >= FIRST_FIVE_SAMPLE_SET && result.number <= LAST_FIVE_SAMPLE_SET;
-    activateSet(isFiveSampleSet ? 5 : 3);
+    state.testId = code;
+    activateSet(samples.length);
+    renderSamples(sets[samples.length], samples);
     document.querySelectorAll('[data-test-id-label]').forEach(function (el) {
-      el.textContent = result.id;
+      el.textContent = code;
     });
-    return true;
+  }
+
+  // Replaces the placeholder sample options (№01…) with this set's sample numbers.
+  function renderSamples(set, samples) {
+    set.querySelectorAll('.question').forEach(function (question) {
+      var current = question.querySelectorAll('.option--sample');
+      if (!current.length) return;
+      var name = current[0].querySelector('input').name;
+      var container = current[0].parentNode;
+      var anchor = current[current.length - 1].nextSibling;
+      current.forEach(function (option) { option.remove(); });
+      samples.forEach(function (sample) {
+        var label = document.createElement('label');
+        label.className = 'option option--sample';
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.name = name;
+        input.value = sample;
+        var text = document.createElement('span');
+        text.textContent = sample;
+        label.append(input, text);
+        container.insertBefore(label, anchor);
+      });
+    });
+
+    // Rating cards: card N rates the N-th sample of the set.
+    set.querySelectorAll('.sample-card').forEach(function (card, i) {
+      card.querySelector('.sample-card__title').textContent = 'Зразок ' + samples[i];
+      card.querySelectorAll('.rating').forEach(function (rating) {
+        var aspect = rating.querySelector('.rating__label').textContent.toLowerCase();
+        rating.setAttribute('aria-label', samples[i] + ' — ' + aspect);
+      });
+    });
   }
 
   testIdInput.addEventListener('input', function () {
@@ -245,13 +365,27 @@
     // Enter in the set number field submits the form: treat it as "Далі".
     var current = screens[state.screen];
     if (current.id !== 'screen-survey') return goNext();
-    if (!validateSection(current)) return;
+    if (state.busy || !validateSection(current)) return;
 
-    var answers = collectAnswers();
-    // TODO(step 3): send answers to Google Apps Script instead of logging.
-    console.log('Survey answers', answers);
-    showScreen(3);
+    setStatus('');
+    setBusy(submitButton, true, 'Надсилаємо…');
+    requestSubmit(collectAnswers())
+      .then(function () {
+        setBusy(submitButton, false);
+        showScreen(3);
+      })
+      .catch(function (error) {
+        console.error('Submit failed:', error);
+        setBusy(submitButton, false);
+        submitButton.textContent = 'Спробувати ще';
+        setStatus(MESSAGES.submitFailed, true);
+      });
   });
+
+  function setStatus(message, isError) {
+    formStatus.textContent = message;
+    formStatus.classList.toggle('is-error', Boolean(isError));
+  }
 
   // Enter in a survey text field must not submit the whole survey by accident.
   form.addEventListener('keydown', function (event) {
@@ -275,5 +409,6 @@
   activateSet(3);
   state.setType = null;
   syncConditionals(form);
+  document.getElementById('demo-banner').hidden = !DEMO;
   showScreen(0);
 })();

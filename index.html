@@ -10,11 +10,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Cinzel:wght@700&display=swap">
   <!-- Bump ?v= on every CSS/JS change so browsers do not serve a stale cached copy -->
-  <link rel="stylesheet" href="styles.css?v=7">
-  <script src="app.js?v=7" defer></script>
+  <link rel="stylesheet" href="styles.css?v=8">
+  <script src="app.js?v=10" defer></script>
 </head>
 <body>
   <main class="app">
+    <!-- Visible only while SCRIPT_URL in app.js is empty -->
+    <p class="demo-banner" id="demo-banner" hidden>Демо-режим: відповіді не зберігаються</p>
 
     <!-- Screen 1. Start -->
     <section class="screen screen--start" id="screen-start">
@@ -32,7 +34,7 @@
 
     <form class="survey" id="survey" novalidate>
 
-      <!-- Screen 2. Set number (sticker reads "ТЕСТ 001") -->
+      <!-- Screen 2. Set code (4 digits from the box sticker) -->
       <section class="screen" id="screen-test-id">
         <header class="screen__header screen__header--center">
           <div class="logo" aria-hidden="true"><span class="logo__name">ARABUSTA</span></div>
@@ -54,10 +56,10 @@
       <section class="screen" id="screen-survey">
         <header class="screen__header">
           <button type="button" class="btn-back" data-action="back">← Назад</button>
-          <span class="badge" data-test-id-label>000</span>
+          <span class="badge" data-test-id-label>0000</span>
         </header>
 
-        <!-- Survey for the 3-sample set (any number outside 001…010) -->
+        <!-- Survey for the 3-sample set (3 samples listed in the «Набори» sheet) -->
         <fieldset class="set" id="set-3" data-set="3">
           <legend class="set__title">Набір із 3 зразків</legend>
 
@@ -164,7 +166,7 @@
           </div>
         </fieldset>
 
-        <!-- Survey for the 5-sample set (001…010) -->
+        <!-- Survey for the 5-sample set (5 samples listed in the «Набори» sheet) -->
         <fieldset class="set" id="set-5" data-set="5">
           <legend class="set__title">Набір із 5 зразків</legend>
 
