@@ -4,7 +4,7 @@
   // Google Apps Script web app URL (Deploy → Web app → URL ending in /exec).
   // Empty = demo mode: any 4-digit code is accepted, "5555" opens the 5-sample survey,
   // and answers are only logged to the console.
-  var SCRIPT_URL = '';
+  var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwn2M4GrhdwcI0EaGsnD-Kx2AJsWN37POL9TQWAmMX950JP5yAVxbWgQgoETnta1yOphw/exec';
   var DEMO = !SCRIPT_URL;
   var REQUEST_TIMEOUT_MS = 20000;
   var DEMO_SAMPLES = { 3: ['№01', '№02', '№03'], 5: ['№01', '№02', '№03', '№04', '№05'] };
