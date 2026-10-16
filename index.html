@@ -8,10 +8,10 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Cinzel:wght@700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@700&family=Cinzel:wght@700&display=swap">
   <!-- Bump ?v= on every CSS/JS change so browsers do not serve a stale cached copy -->
-  <link rel="stylesheet" href="styles.css?v=8">
-  <script src="app.js?v=11" defer></script>
+  <link rel="stylesheet" href="styles.css?v=10">
+  <script src="app.js?v=15" defer></script>
 </head>
 <body>
   <main class="app">
@@ -34,7 +34,7 @@
 
     <form class="survey" id="survey" novalidate>
 
-      <!-- Screen 2. Set code (4 digits from the box sticker) -->
+      <!-- Screen 2. Set code (4 digits printed on the box) -->
       <section class="screen" id="screen-test-id">
         <header class="screen__header screen__header--center">
           <div class="logo" aria-hidden="true"><span class="logo__name">ARABUSTA</span></div>
@@ -60,28 +60,28 @@
         </header>
 
         <!-- Survey for the 3-sample set (3 samples listed in the «Набори» sheet) -->
-        <fieldset class="set" id="set-3" data-set="3">
+        <fieldset class="set" id="set-3">
           <legend class="set__title">Набір із 3 зразків</legend>
 
           <fieldset class="question" data-required>
-            <legend class="question__title">Який зразок сподобався найбільше?</legend>
+            <legend class="question__title">Який зразок сподобався найбільше? <span class="hint">можна кілька</span></legend>
             <div class="options">
-              <label class="option option--sample"><input type="radio" name="favorite" value="№01"><span>№01</span></label>
-              <label class="option option--sample"><input type="radio" name="favorite" value="№02"><span>№02</span></label>
-              <label class="option option--sample"><input type="radio" name="favorite" value="№03"><span>№03</span></label>
-              <label class="option"><input type="radio" name="favorite" value="Не можу визначитися"><span>Не можу визначитися</span></label>
-              <label class="option"><input type="radio" name="favorite" value="Жоден" data-none><span>Жоден</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№01"><span>№01</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№02"><span>№02</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№03"><span>№03</span></label>
+              <label class="option"><input type="checkbox" name="favorite" value="Не можу визначитися" data-exclusive><span>Не можу визначитися</span></label>
+              <label class="option"><input type="checkbox" name="favorite" value="Жоден" data-none data-exclusive><span>Жоден</span></label>
             </div>
             <p class="field__error" aria-live="polite"></p>
           </fieldset>
 
           <fieldset class="question" data-required>
-            <legend class="question__title">Який зразок Ви б купили?</legend>
+            <legend class="question__title">Який зразок Ви б купили? <span class="hint">можна кілька</span></legend>
             <div class="options">
-              <label class="option option--sample"><input type="radio" name="buy" value="№01"><span>№01</span></label>
-              <label class="option option--sample"><input type="radio" name="buy" value="№02"><span>№02</span></label>
-              <label class="option option--sample"><input type="radio" name="buy" value="№03"><span>№03</span></label>
-              <label class="option"><input type="radio" name="buy" value="Жоден"><span>Жоден</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№01"><span>№01</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№02"><span>№02</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№03"><span>№03</span></label>
+              <label class="option"><input type="checkbox" name="buy" value="Жоден" data-exclusive><span>Жоден</span></label>
             </div>
             <p class="field__error" aria-live="polite"></p>
           </fieldset>
@@ -167,7 +167,7 @@
         </fieldset>
 
         <!-- Survey for the 5-sample set (5 samples listed in the «Набори» sheet) -->
-        <fieldset class="set" id="set-5" data-set="5">
+        <fieldset class="set" id="set-5">
           <legend class="set__title">Набір із 5 зразків</legend>
 
           <p class="lead">Оцініть кожен зразок за шкалою від 1 (слабко) до 5 (відмінно).</p>
@@ -221,28 +221,28 @@
           </div>
 
           <fieldset class="question" data-required>
-            <legend class="question__title">Який зразок сподобався найбільше?</legend>
+            <legend class="question__title">Який зразок сподобався найбільше? <span class="hint">можна кілька</span></legend>
             <div class="options">
-              <label class="option option--sample"><input type="radio" name="favorite" value="№01"><span>№01</span></label>
-              <label class="option option--sample"><input type="radio" name="favorite" value="№02"><span>№02</span></label>
-              <label class="option option--sample"><input type="radio" name="favorite" value="№03"><span>№03</span></label>
-              <label class="option option--sample"><input type="radio" name="favorite" value="№04"><span>№04</span></label>
-              <label class="option option--sample"><input type="radio" name="favorite" value="№05"><span>№05</span></label>
-              <label class="option"><input type="radio" name="favorite" value="Не можу визначитися"><span>Не можу визначитися</span></label>
-              <label class="option"><input type="radio" name="favorite" value="Жоден"><span>Жоден</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№01"><span>№01</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№02"><span>№02</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№03"><span>№03</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№04"><span>№04</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№05"><span>№05</span></label>
+              <label class="option"><input type="checkbox" name="favorite" value="Не можу визначитися" data-exclusive><span>Не можу визначитися</span></label>
+              <label class="option"><input type="checkbox" name="favorite" value="Жоден" data-exclusive><span>Жоден</span></label>
             </div>
             <p class="field__error" aria-live="polite"></p>
           </fieldset>
 
           <fieldset class="question" data-required>
-            <legend class="question__title">Який зразок Ви б купили?</legend>
+            <legend class="question__title">Який зразок Ви б купили? <span class="hint">можна кілька</span></legend>
             <div class="options">
-              <label class="option option--sample"><input type="radio" name="buy" value="№01"><span>№01</span></label>
-              <label class="option option--sample"><input type="radio" name="buy" value="№02"><span>№02</span></label>
-              <label class="option option--sample"><input type="radio" name="buy" value="№03"><span>№03</span></label>
-              <label class="option option--sample"><input type="radio" name="buy" value="№04"><span>№04</span></label>
-              <label class="option option--sample"><input type="radio" name="buy" value="№05"><span>№05</span></label>
-              <label class="option"><input type="radio" name="buy" value="Жоден"><span>Жоден</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№01"><span>№01</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№02"><span>№02</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№03"><span>№03</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№04"><span>№04</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№05"><span>№05</span></label>
+              <label class="option"><input type="checkbox" name="buy" value="Жоден" data-exclusive><span>Жоден</span></label>
             </div>
             <p class="field__error" aria-live="polite"></p>
           </fieldset>
@@ -300,29 +300,5 @@
     </section>
 
   </main>
-
-  <!-- TEMPORARY: theme toggle for design review. Remove before release. -->
-  <button type="button" class="theme-toggle" id="theme-toggle">Тема: авто</button>
-  <script>
-    (function () {
-      var modes = ['auto', 'light', 'dark'];
-      var names = { auto: 'авто', light: 'світла', dark: 'темна' };
-      var btn = document.getElementById('theme-toggle');
-      var mode = 'auto';
-      try { mode = localStorage.getItem('theme') || 'auto'; } catch (e) {}
-      function apply() {
-        if (mode === 'auto') document.documentElement.removeAttribute('data-theme');
-        else document.documentElement.setAttribute('data-theme', mode);
-        btn.textContent = 'Тема: ' + names[mode];
-      }
-      btn.addEventListener('click', function () {
-        mode = modes[(modes.indexOf(mode) + 1) % modes.length];
-        try { localStorage.setItem('theme', mode); } catch (e) {}
-        apply();
-      });
-      apply();
-    })();
-  </script>
-  <!-- /TEMPORARY -->
 </body>
 </html>

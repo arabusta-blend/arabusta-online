@@ -1,4 +1,4 @@
-/* Palette based on the ARABUSTA COFFEE logo: brown, gold, green. */
+/* Palette based on the ARABUSTA COFFEE logo: brown and gold. */
 :root {
   --bg: #f7f1e8;
   --surface: #fffdf8;
@@ -9,7 +9,6 @@
   --accent-soft: #f0e2d0;
   --border: #e5d6c2;
   --gold: #b98232;
-  --green: #4c7f2a;
   --logo-fill: #5e2c12;
   --error: #b42318;
   --radius: 14px;
@@ -18,9 +17,9 @@
   --font-logo: 'Cinzel', 'Playfair Display', Georgia, serif; /* Latin only (no Cyrillic) */
 }
 
-/* Dark theme mirrors the black version of the logo */
+/* Dark theme (follows the phone's setting) mirrors the black version of the logo */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root {
     --bg: #0e0a07;
     --surface: #1b130d;
     --fg: #f4ebdf;
@@ -30,7 +29,6 @@
     --accent-soft: #2e2114;
     --border: #3a2a1c;
     --gold: #d7a24e;
-    --green: #7fae4a;
     --logo-fill: #7a3d1a;
     --logo-small: var(--gold); /* plain brown blends into the black background */
     /* Light outline so the brown lettering of the logo reads on black, like the logo's dark version */
@@ -39,44 +37,6 @@
     color-scheme: dark;
   }
 }
-
-/* TEMPORARY: forced theme for the toggle (copy of the dark tokens above). Remove together with .theme-toggle */
-:root[data-theme="light"] { color-scheme: light; }
-:root[data-theme="dark"] {
-  --bg: #0e0a07;
-  --surface: #1b130d;
-  --fg: #f4ebdf;
-  --muted: #b5a08c;
-  --accent: #c9933f;
-  --accent-fg: #0e0a07;
-  --accent-soft: #2e2114;
-  --border: #3a2a1c;
-  --gold: #d7a24e;
-  --green: #7fae4a;
-  --logo-fill: #7a3d1a;
-  --logo-small: var(--gold);
-  --logo-outline: drop-shadow(0 0 0.6px #f4e6c8) drop-shadow(0 0 0.6px #f4e6c8);
-  --error: #f97066;
-  color-scheme: dark;
-}
-
-.theme-toggle {
-  position: fixed;
-  right: 12px;
-  bottom: 12px;
-  z-index: 10;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  background: var(--surface);
-  color: var(--fg);
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
-}
-/* /TEMPORARY */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 

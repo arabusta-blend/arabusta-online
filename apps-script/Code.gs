@@ -4,8 +4,9 @@
  * setup()          — run once from the editor: creates the sheets, headers, code list and analysis.
  * repairFormulas() — rewrites formulas and formats only (no data); fixes #ERROR! cells.
  * setupAnalysis()  — rebuilds only «Аналіз» (and its hidden helper sheet); safe to re-run.
- * doGet()  — ?action=check&code=1234 → { ok, valid, samples, setType } (looked up in «Набори»).
- * doPost() — JSON answers from the form → one row in «Відповіді».
+ * doGet()  — ?action=check&code=1234 → { ok, valid, answered, samples, setType } (looked up in «Набори»).
+ * doPost() — JSON answers from the form → one row in «Відповіді». One response per code:
+ *            a code that already has a row is rejected with 'already_answered'.
  *
  * The form never sees the code list; codes and their sample numbers live only in «Набори».
  * Each set picks its samples from dropdowns fed by the «Зразки» sheet.
@@ -20,7 +21,7 @@ var SHEETS = {
   helper: 'Дані для аналізу' // hidden; per-response lookups that «Аналіз» formulas build on
 };
 
-// Initial sticker codes; setup() writes them into «Набори» with DEFAULT_SAMPLES.
+// Box codes in print order; setup() writes them into «Набори» with DEFAULT_SAMPLES.
 var INITIAL_CODES = [
   '3142', '5214', '2451', '4132', '1523', '5341', '2135', '4512', '1354', '3425',
   '5123', '2314', '4251', '1432', '3512', '5432', '2543', '1245', '4325', '3251',
@@ -33,12 +34,14 @@ var SAMPLE_HEADERS = ['Номер зразка', 'Назва купажу (ли�
 var INITIAL_SAMPLE_COUNT = 5;
 
 var MAX_SAMPLES = 5;
-var DEFAULT_SAMPLES = ['№01', '№02', '№03'];
+// The first 10 INITIAL_CODES are on black boxes: 5-sample sets. The other 30 (white boxes) have 3.
+var FIVE_SAMPLE_SET_COUNT = 10;
+var DEFAULT_SAMPLES = { 3: ['№01', '№02', '№03'], 5: ['№01', '№02', '№03', '№04', '№05'] };
 var SET_HEADERS = [
   'Код', 'Зразок 1', 'Зразок 2', 'Зразок 3', 'Зразок 4', 'Зразок 5',
   'Дата передачі', 'Кому передано', 'Тип отримувача', 'Відповідей', 'Остання відповідь', 'Статус'
 ];
-var SET_COL = { code: 1, firstSample: 2, handedOver: 7, recipientType: 9, responses: 10, last: 11, status: 12 };
+var SET_COL = { code: 1, firstSample: 2, handedOver: 7, recipientType: 9, responses: 10, last: 11 };
 var SET_ROWS = 200;
 var RECIPIENT_TYPES = ['Кавова точка', 'Професійний дегустатор', 'Приватна особа', 'Інше'];
 
@@ -60,16 +63,18 @@ var RATING = ['1', '2', '3', '4', '5'];
 var RATING_ASPECTS = [['taste', 'смак'], ['aroma', 'аромат'], ['body', 'насиченість'], ['finish', 'післясмак']];
 
 // Field rules for a set with the given sample numbers. kind: one | many | text.
+// "exclusive" options of a "many" field may only be chosen on their own.
 function fieldRules(samples) {
   var setType = samples.length;
   var rules = {
-    favorite: { kind: 'one', values: samples.concat(['Не можу визначитися', 'Жоден']), required: true },
-    buy: { kind: 'one', values: samples.concat(['Жоден']), required: true },
+    favorite: { kind: 'many', values: samples.concat(['Не можу визначитися', 'Жоден']),
+      exclusive: ['Не можу визначитися', 'Жоден'], required: true },
+    buy: { kind: 'many', values: samples.concat(['Жоден']), exclusive: ['Жоден'], required: true },
     liked: { kind: 'many', values: LIKED, required: true },
     liked_other: { kind: 'text' }
   };
   if (setType === 3) {
-    rules.missing = { kind: 'many', values: MISSING, required: true };
+    rules.missing = { kind: 'many', values: MISSING, exclusive: ['Нічого'], required: true };
     rules.missing_other = { kind: 'text' };
     rules.drink = { kind: 'many', values: DRINK, required: true };
     rules.drink_other = { kind: 'text' };
@@ -78,7 +83,7 @@ function fieldRules(samples) {
     rules.wish = { kind: 'text' };
     rules.advice = { kind: 'text' };
   } else {
-    rules.change = { kind: 'many', values: MISSING, required: true };
+    rules.change = { kind: 'many', values: MISSING, exclusive: ['Нічого'], required: true };
     rules.change_other = { kind: 'text' };
     rules.comment = { kind: 'text' };
     for (var s = 1; s <= 5; s++) {
@@ -212,8 +217,10 @@ function setup_() {
     sets.getRange('A:A').setNumberFormat('@');
 
     var n = INITIAL_CODES.length;
-    sets.getRange(2, SET_COL.code, n, 1 + DEFAULT_SAMPLES.length)
-      .setValues(INITIAL_CODES.map(function (code) { return [code].concat(DEFAULT_SAMPLES); }));
+    sets.getRange(2, SET_COL.code, n, 1 + MAX_SAMPLES).setValues(INITIAL_CODES.map(function (code, i) {
+      var samples = DEFAULT_SAMPLES[i < FIVE_SAMPLE_SET_COUNT ? 5 : 3];
+      return [code].concat(samples, ['', ''].slice(0, MAX_SAMPLES - samples.length));
+    }));
 
     // Rows prepared for codes added later: dropdowns and formulas already in place.
     var rows = SET_ROWS;
@@ -309,9 +316,10 @@ function respRange_(header) {
 }
 
 // Helper sheet columns: A code, B recipient type, C in-filter flag, D–H samples 1–5,
-// I samples wrapped, J liked wrapped, K missing/change wrapped, L drink wrapped.
+// I samples wrapped, J liked wrapped, K missing/change wrapped, L drink wrapped,
+// M favorite wrapped, N would-buy samples wrapped (both multi-select).
 var HELPER = { code: 'A', recipient: 'B', inFilter: 'C', sampleCols: ['D', 'E', 'F', 'G', 'H'],
-  samples: 'I', liked: 'J', missing: 'K', drink: 'L' };
+  samples: 'I', liked: 'J', missing: 'K', drink: 'L', favorite: 'M', buy: 'N' };
 
 function helperRange_(col) {
   return "'" + SHEETS.helper + "'!" + col + '2:' + col + (ANALYSIS_ROWS + 1);
@@ -327,9 +335,9 @@ function buildHelper_(helper) {
     return '=ARRAYFORMULA(IF(' + codes + '="", "", ", "&' + respRange_(header) + '&","))';
   };
 
-  helper.getRange(1, 1, 1, 12).setValues([[
+  helper.getRange(1, 1, 1, 14).setValues([[
     'Код', 'Тип отримувача', 'У вибірці', 'Зразок 1', 'Зразок 2', 'Зразок 3', 'Зразок 4', 'Зразок 5',
-    'Зразки', 'Сподобалось', 'Не вистачає', "Як п'є"
+    'Зразки', 'Сподобалось', 'Не вистачає', "Як п'є", 'Найкращий', 'Купив би'
   ]]);
   helper.getRange('A2').setFormula(
     '=ARRAYFORMULA(IF(' + respRange_('Код') + '="", "", ' + respRange_('Код') + '))');
@@ -350,6 +358,8 @@ function buildHelper_(helper) {
   helper.getRange('J2').setFormula(wrap('Що сподобалось'));
   helper.getRange('K2').setFormula(wrap('Чого не вистачає / що змінити'));
   helper.getRange('L2').setFormula(wrap("Як п'є каву"));
+  helper.getRange('M2').setFormula(wrap('Найкращий зразок'));
+  helper.getRange('N2').setFormula(wrap('Купив би'));
 }
 
 function buildAnalysis_(sheet) {
@@ -406,8 +416,9 @@ function buildAnalysis_(sheet) {
   row.setFormulas([[
     "=FILTER('" + SHEETS.samples + "'!A2:A, '" + SHEETS.samples + "'!A2:A<>\"\")",
     guard('COUNTIFS(' + inFilter + ', 1, ' + helperRange_(HELPER.samples) + ', "*, "&' + samples + '&",*")'),
-    guard('COUNTIFS(' + inFilter + ', 1, ' + respRange_('Найкращий зразок') + ', ' + samples + ')'),
-    guard('COUNTIFS(' + inFilter + ', 1, ' + respRange_('Купив би') + ', ' + samples + ')'),
+    // Several samples may be named as best / would buy, so count answers that contain the sample.
+    guard('COUNTIFS(' + inFilter + ', 1, ' + helperRange_(HELPER.favorite) + ', "*, "&' + samples + '&",*")'),
+    guard('COUNTIFS(' + inFilter + ', 1, ' + helperRange_(HELPER.buy) + ', "*, "&' + samples + '&",*")'),
     guard('IF(' + col('B') + '=0, "", ' + col('C') + '/' + col('B') + ')'),
     guard('IF(' + col('B') + '=0, "", ' + col('D') + '/' + col('B') + ')'),
     ratingAverage('смак'),
@@ -493,14 +504,27 @@ function buildAnalysis_(sheet) {
 function doGet(e) {
   var params = (e && e.parameter) || {};
   if (params.action !== 'check') return json_({ ok: false, error: 'unknown_action' });
-  var set = findSet_(String(params.code || ''));
+  var code = String(params.code || '');
+  var set = findSet_(code);
   if (set && set.error) return json_({ ok: false, error: set.error });
   return json_({
     ok: true,
     valid: set !== null,
+    answered: set !== null && hasResponse_(code),
     samples: set ? set.samples : null,
     setType: set ? set.samples.length : null
   });
+}
+
+// One response per code: true if «Відповіді» already has a row for it.
+function hasResponse_(code) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.responses);
+  if (!sheet || sheet.getLastRow() < 2) return false;
+  var codes = sheet.getRange(2, 2, sheet.getLastRow() - 1, 1).getDisplayValues();
+  for (var i = 0; i < codes.length; i++) {
+    if (codes[i][0].trim() === code) return true;
+  }
+  return false;
 }
 
 function doPost(e) {
@@ -531,6 +555,8 @@ function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
+    // Checked under the lock so two simultaneous submissions cannot both pass.
+    if (hasResponse_(code)) return json_({ ok: false, error: 'already_answered' });
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.responses);
     ensureRows_(sheet, sheet.getLastRow() + 1);
     var target = sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length);
@@ -585,7 +611,8 @@ function validateAnswers_(answers, samples) {
     if (rule.kind === 'many') {
       var parts = raw.split(', ');
       for (var i = 0; i < parts.length; i++) {
-        if (rule.values.indexOf(parts[i]) === -1) return { error: 'invalid_' + key };
+        if (rule.values.indexOf(parts[i]) === -1 || parts.indexOf(parts[i]) !== i) return { error: 'invalid_' + key };
+        if (parts.length > 1 && (rule.exclusive || []).indexOf(parts[i]) !== -1) return { error: 'invalid_' + key };
       }
     }
     if (rule.kind === 'text') raw = safeText_(raw);

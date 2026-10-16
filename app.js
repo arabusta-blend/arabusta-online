@@ -16,7 +16,10 @@
     testIdEmpty: 'Введіть код з коробки.',
     testIdLength: 'Код має складатися з чотирьох цифр.',
     testIdUnknown: 'Такого коду немає. Перевірте цифри на коробці.',
+    testIdAnswered: 'За цим кодом анкету вже заповнено. Дякуємо!',
     checkFailed: 'Не вдалося перевірити код. Перевірте інтернет і спробуйте ще раз.',
+    setMisconfigured: 'Цей набір ще не налаштовано. Будь ласка, зверніться до ARABUSTA.',
+    alreadyAnswered: 'За цим кодом анкету вже заповнили раніше, тому ці відповіді не збережено.',
     submitFailed: 'Не вдалося надіслати відповіді. Перевірте інтернет і спробуйте ще раз.',
     radio: 'Оберіть варіант.',
     checkbox: 'Оберіть хоча б один варіант.',
@@ -81,7 +84,7 @@
     return response.json();
   }
 
-  // Resolves to { valid, samples } where samples are the set's sample numbers, e.g. ['№02', '№04', '№05'].
+  // Resolves to { valid, answered, samples }; samples are the set's sample numbers, e.g. ['№02', '№04', '№05'].
   function requestCodeCheck(code) {
     if (DEMO) return Promise.resolve({ ok: true, valid: true, samples: DEMO_SAMPLES[code === '5555' ? 5 : 3] });
     var url = SCRIPT_URL + '?action=check&code=' + encodeURIComponent(code);
@@ -118,7 +121,7 @@
     }
   }
 
-  // ---------- Set number ----------
+  // ---------- Set code ----------
 
   // Keeps only digits, so pasted text with spaces or letters still works.
   function digitsOf(value) {
@@ -149,6 +152,7 @@
       .then(function (check) {
         setBusy(nextButton, false);
         if (!check.valid) return showTestIdError(MESSAGES.testIdUnknown);
+        if (check.answered) return showTestIdError(MESSAGES.testIdAnswered); // one response per code
         var samples = check.samples || [];
         if (!sets[samples.length]) throw new Error('unexpected sample count: ' + samples.length);
         acceptTestId(result.id, samples);
@@ -157,7 +161,9 @@
       .catch(function (error) {
         console.error('Code check failed:', error);
         setBusy(nextButton, false);
-        showTestIdError(MESSAGES.checkFailed);
+        // The set's row in «Набори» is filled in wrong (not 3 or 5 samples): not a network problem.
+        var misconfigured = /^(bad_samples|unexpected sample count)/.test(error.message);
+        showTestIdError(misconfigured ? MESSAGES.setMisconfigured : MESSAGES.checkFailed);
       });
   }
 
@@ -177,7 +183,9 @@
     set.querySelectorAll('.question').forEach(function (question) {
       var current = question.querySelectorAll('.option--sample');
       if (!current.length) return;
-      var name = current[0].querySelector('input').name;
+      var template = current[0].querySelector('input');
+      var name = template.name;
+      var type = template.type;
       var container = current[0].parentNode;
       var anchor = current[current.length - 1].nextSibling;
       current.forEach(function (option) { option.remove(); });
@@ -185,7 +193,7 @@
         var label = document.createElement('label');
         label.className = 'option option--sample';
         var input = document.createElement('input');
-        input.type = 'radio';
+        input.type = type;
         input.name = name;
         input.value = sample;
         var text = document.createElement('span');
@@ -350,7 +358,7 @@
   // Collects enabled fields into a flat object; multi-select values are joined with ", ".
   function collectAnswers() {
     var data = new FormData(form);
-    var answers = { test_id: state.testId, set_type: state.setType };
+    var answers = { test_id: state.testId }; // the script takes the set type from «Набори»
     data.forEach(function (value, key) {
       if (key === 'test_id') return;
       value = String(value).trim();
@@ -377,6 +385,8 @@
       .catch(function (error) {
         console.error('Submit failed:', error);
         setBusy(submitButton, false);
+        // Someone else submitted this code first; retrying cannot help.
+        if (error.message === 'already_answered') return setStatus(MESSAGES.alreadyAnswered, true);
         submitButton.textContent = 'Спробувати ще';
         setStatus(MESSAGES.submitFailed, true);
       });
