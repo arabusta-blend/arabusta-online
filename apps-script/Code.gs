@@ -45,9 +45,6 @@ var SET_COL = { code: 1, firstSample: 2, handedOver: 7, recipientType: 9, respon
 var SET_ROWS = 200;
 var RECIPIENT_TYPES = ['Кавова точка', 'Професійний дегустатор', 'Приватна особа', 'Інше'];
 
-// «Аналіз» formulas cover this many responses (rows 2…ANALYSIS_ROWS + 1 of «Відповіді»).
-var ANALYSIS_ROWS = 2000;
-
 var MAX_TEXT_LENGTH = 1000;
 var MAX_SAMPLE_LENGTH = 20;
 
@@ -265,9 +262,13 @@ function ensureRows_(sheet, count) {
 //
 // «Дані для аналізу» (hidden) holds one formula row per response: the code, the recipient type
 // looked up in «Набори», a 0/1 "matches the filters" flag, the set's samples split into five
-// columns, and comma-wrapped multi-select answers for "contains" counting.
-// «Аналіз» counts and averages over those columns. Every range spans the same rows
-// (2…ANALYSIS_ROWS + 1) so COUNTIFS/SUMIFS can mix both sheets.
+// columns, comma-wrapped multi-select answers for "contains" counting, and copies of the
+// single-choice answers and ratings.
+//
+// Ranges are open-ended (B2:B, not B2:B2001): Sheets shrinks a bounded range when rows are
+// deleted in «Відповіді», which made ranges in one COUNTIFS differ in size (#VALUE!).
+// Helper formulas read only «Відповіді» and «Аналіз» reads only the helper, so every
+// COUNTIFS/SUMIFS mixes ranges of a single sheet and their sizes always match.
 
 var ANALYSIS_LAYOUT = {
   recipientFilter: 'B4',
@@ -284,7 +285,6 @@ function setupAnalysis() {
 
 function buildAnalysisSheets_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  ensureRows_(ss.getSheetByName(SHEETS.responses), ANALYSIS_ROWS + 1);
 
   // Both sheets must exist before formulas reference each other.
   var sheet = getOrCreateSheet_(ss, SHEETS.analysis);
@@ -294,11 +294,21 @@ function buildAnalysisSheets_() {
     s.clear();
     s.getRange(1, 1, s.getMaxRows(), s.getMaxColumns()).clearDataValidations();
   });
-  ensureRows_(helper, ANALYSIS_ROWS + 1);
+  syncHelperSize_(ss);
 
   buildHelper_(helper);
   buildAnalysis_(sheet);
   helper.hideSheet();
+}
+
+// Helper columns mirror «Відповіді» row for row, so the helper needs at least as many rows
+// (and enough columns for HELPER_HEADERS) or its array formulas cannot expand.
+function syncHelperSize_(ss) {
+  var helper = ss.getSheetByName(SHEETS.helper);
+  if (!helper) return;
+  ensureRows_(helper, ss.getSheetByName(SHEETS.responses).getMaxRows());
+  var missingCols = HELPER_HEADERS.length - helper.getMaxColumns();
+  if (missingCols > 0) helper.insertColumnsAfter(helper.getMaxColumns(), missingCols);
 }
 
 function colLetter_(n) {
@@ -307,59 +317,80 @@ function colLetter_(n) {
   return s;
 }
 
-// 'Відповіді'!E2:E2001 for a «Відповіді» header.
+// 'Відповіді'!E2:E for a «Відповіді» header.
 function respRange_(header) {
   var index = responseColumns().map(function (c) { return c[0]; }).indexOf(header);
   if (index === -1) throw new Error('Unknown response column: ' + header);
   var col = colLetter_(index + 1);
-  return "'" + SHEETS.responses + "'!" + col + '2:' + col + (ANALYSIS_ROWS + 1);
+  return "'" + SHEETS.responses + "'!" + col + '2:' + col;
 }
 
 // Helper sheet columns: A code, B recipient type, C in-filter flag, D–H samples 1–5,
 // I samples wrapped, J liked wrapped, K missing/change wrapped, L drink wrapped,
-// M favorite wrapped, N would-buy samples wrapped (both multi-select).
+// M favorite wrapped, N would-buy samples wrapped, O set type, P favorite as written,
+// Q would buy, R price, S… the 20 ratings S1_смак…S5_післясмак.
 var HELPER = { code: 'A', recipient: 'B', inFilter: 'C', sampleCols: ['D', 'E', 'F', 'G', 'H'],
-  samples: 'I', liked: 'J', missing: 'K', drink: 'L', favorite: 'M', buy: 'N' };
+  samples: 'I', liked: 'J', missing: 'K', drink: 'L', favorite: 'M', buy: 'N',
+  setType: 'O', favoriteRaw: 'P', wouldBuy: 'Q', price: 'R', firstRating: 19 };
+
+var HELPER_HEADERS = (function () {
+  var headers = ['Код', 'Тип отримувача', 'У вибірці', 'Зразок 1', 'Зразок 2', 'Зразок 3', 'Зразок 4', 'Зразок 5',
+    'Зразки', 'Сподобалось', 'Не вистачає', "Як п'є", 'Найкращий', 'Купив би',
+    'Тип набору', 'Найкращий (як є)', 'Чи купив би', 'Ціна'];
+  for (var s = 1; s <= MAX_SAMPLES; s++) {
+    RATING_ASPECTS.forEach(function (aspect) { headers.push('S' + s + '_' + aspect[1]); });
+  }
+  return headers;
+})();
+
+// Helper column of the rating for the k-th sample (0-based) and aspect index (0 = смак).
+function helperRatingCol_(k, aspectIndex) {
+  return colLetter_(HELPER.firstRating + k * RATING_ASPECTS.length + aspectIndex);
+}
 
 function helperRange_(col) {
-  return "'" + SHEETS.helper + "'!" + col + '2:' + col + (ANALYSIS_ROWS + 1);
+  return "'" + SHEETS.helper + "'!" + col + '2:' + col;
 }
 
 function buildHelper_(helper) {
-  var last = ANALYSIS_ROWS + 1;
-  var codes = 'A2:A' + last;
+  var codes = respRange_('Код');
   var analysis = "'" + SHEETS.analysis + "'!";
   var recipientFilter = analysis + '$' + ANALYSIS_LAYOUT.recipientFilter.replace(/(\d+)/, '$$$1');
   var codeFilter = analysis + '$' + ANALYSIS_LAYOUT.codeFilter.replace(/(\d+)/, '$$$1');
-  var wrap = function (header) {
-    return '=ARRAYFORMULA(IF(' + codes + '="", "", ", "&' + respRange_(header) + '&","))';
+  var recipient = 'IFERROR(VLOOKUP(' + codes + ", '" + SHEETS.sets + "'!A:" +
+    colLetter_(SET_COL.recipientType) + ', ' + SET_COL.recipientType + ', FALSE), "")';
+  // Every helper column reads «Відповіді» only, so all of them have the same length.
+  var column = function (col, expr) {
+    helper.getRange(col + '2').setFormula('=ARRAYFORMULA(IF(' + codes + '="", "", ' + expr + '))');
   };
+  var wrapped = function (header) { return '", "&' + respRange_(header) + '&","'; };
 
-  helper.getRange(1, 1, 1, 14).setValues([[
-    'Код', 'Тип отримувача', 'У вибірці', 'Зразок 1', 'Зразок 2', 'Зразок 3', 'Зразок 4', 'Зразок 5',
-    'Зразки', 'Сподобалось', 'Не вистачає', "Як п'є", 'Найкращий', 'Купив би'
-  ]]);
-  helper.getRange('A2').setFormula(
-    '=ARRAYFORMULA(IF(' + respRange_('Код') + '="", "", ' + respRange_('Код') + '))');
-  helper.getRange('B2').setFormula(
-    '=ARRAYFORMULA(IF(' + codes + '="", "", IFERROR(VLOOKUP(' + codes + ", '" + SHEETS.sets + "'!A:" +
-    colLetter_(SET_COL.recipientType) + ', ' + SET_COL.recipientType + ', FALSE), "")))');
-  helper.getRange('C2').setFormula(
-    '=ARRAYFORMULA(IF(' + codes + '="", 0, SIGN((' + recipientFilter + '="Усі")+(B2:B' + last + '=' +
+  helper.getRange(1, 1, 1, HELPER_HEADERS.length).setValues([HELPER_HEADERS]);
+  column(HELPER.code, codes);
+  column(HELPER.recipient, recipient);
+  helper.getRange(HELPER.inFilter + '2').setFormula(
+    '=ARRAYFORMULA(IF(' + codes + '="", 0, SIGN((' + recipientFilter + '="Усі")+(' + recipient + '=' +
     recipientFilter + '))*SIGN((' + codeFilter + '="")+(' + codes + '=' + codeFilter + '))))');
   HELPER.sampleCols.forEach(function (col, k) {
     // k-th entry of ", №02, №04, №05," — the samples in «Зразок 1…5» order.
     var pattern = '^' + (k ? '(?:, [^,]+){' + k + '}' : '') + ', ([^,]+),';
-    helper.getRange(col + '2').setFormula(
-      '=ARRAYFORMULA(IF(' + codes + '="", "", IFERROR(REGEXEXTRACT(", "&' + respRange_('Зразки набору') +
-      '&",", "' + pattern + '"), "")))');
+    column(col, 'IFERROR(REGEXEXTRACT(' + wrapped('Зразки набору') + ', "' + pattern + '"), "")');
   });
-  helper.getRange('I2').setFormula(wrap('Зразки набору'));
-  helper.getRange('J2').setFormula(wrap('Що сподобалось'));
-  helper.getRange('K2').setFormula(wrap('Чого не вистачає / що змінити'));
-  helper.getRange('L2').setFormula(wrap("Як п'є каву"));
-  helper.getRange('M2').setFormula(wrap('Найкращий зразок'));
-  helper.getRange('N2').setFormula(wrap('Купив би'));
+  column(HELPER.samples, wrapped('Зразки набору'));
+  column(HELPER.liked, wrapped('Що сподобалось'));
+  column(HELPER.missing, wrapped('Чого не вистачає / що змінити'));
+  column(HELPER.drink, wrapped("Як п'є каву"));
+  column(HELPER.favorite, wrapped('Найкращий зразок'));
+  column(HELPER.buy, wrapped('Купив би'));
+  column(HELPER.setType, respRange_('Тип набору'));
+  column(HELPER.favoriteRaw, respRange_('Найкращий зразок'));
+  column(HELPER.wouldBuy, respRange_('Чи купив би'));
+  column(HELPER.price, respRange_('Ціна за 250 г'));
+  for (var k = 0; k < MAX_SAMPLES; k++) {
+    RATING_ASPECTS.forEach(function (aspect, a) {
+      column(helperRatingCol_(k, a), respRange_('S' + (k + 1) + '_' + aspect[1]));
+    });
+  }
 }
 
 function buildAnalysis_(sheet) {
@@ -384,15 +415,15 @@ function buildAnalysis_(sheet) {
   sheet.getRange('B4:B5').setBackground('#fff4dc');
 
   // Summary
-  var count = function (header, value) {
-    return '=COUNTIFS(' + inFilter + ', 1, ' + respRange_(header) + ', ' + value + ')';
+  var count = function (helperCol, value) {
+    return '=COUNTIFS(' + inFilter + ', 1, ' + helperRange_(helperCol) + ', ' + value + ')';
   };
   sheet.getRange('A7:B11').setValues([
     ['Відповідей у вибірці', '=SUM(' + inFilter + ')'],
-    ['з них набори на 3 зразки', count('Тип набору', 3)],
-    ['з них набори на 5 зразків', count('Тип набору', 5)],
-    ['Найкращий — «Жоден»', count('Найкращий зразок', '"Жоден"')],
-    ['Найкращий — «Не можу визначитися»', count('Найкращий зразок', '"Не можу визначитися"')]
+    ['з них набори на 3 зразки', count(HELPER.setType, 3)],
+    ['з них набори на 5 зразків', count(HELPER.setType, 5)],
+    ['Найкращий — «Жоден»', count(HELPER.favoriteRaw, '"Жоден"')],
+    ['Найкращий — «Не можу визначитися»', count(HELPER.favoriteRaw, '"Не можу визначитися"')]
   ]);
 
   // Per-sample table: one row per number listed in «Зразки».
@@ -403,10 +434,10 @@ function buildAnalysis_(sheet) {
   var samples = col('A');
   var guard = function (expr) { return '=ARRAYFORMULA(IF(' + samples + '="", "", ' + expr + '))'; };
   var row = sheet.getRange(first, 1, 1, 11);
-  var ratingAverage = function (aspect) {
+  var ratingAverage = function (aspectIndex) {
     var sums = [], counts = [];
     HELPER.sampleCols.forEach(function (sampleCol, k) {
-      var ratings = respRange_('S' + (k + 1) + '_' + aspect);
+      var ratings = helperRange_(helperRatingCol_(k, aspectIndex));
       var sampleRange = helperRange_(sampleCol);
       sums.push('SUMIFS(' + ratings + ', ' + sampleRange + ', ' + samples + ', ' + inFilter + ', 1)');
       counts.push('COUNTIFS(' + sampleRange + ', ' + samples + ', ' + inFilter + ', 1, ' + ratings + ', ">0")');
@@ -421,10 +452,10 @@ function buildAnalysis_(sheet) {
     guard('COUNTIFS(' + inFilter + ', 1, ' + helperRange_(HELPER.buy) + ', "*, "&' + samples + '&",*")'),
     guard('IF(' + col('B') + '=0, "", ' + col('C') + '/' + col('B') + ')'),
     guard('IF(' + col('B') + '=0, "", ' + col('D') + '/' + col('B') + ')'),
-    ratingAverage('смак'),
-    ratingAverage('аромат'),
-    ratingAverage('насиченість'),
-    ratingAverage('післясмак'),
+    ratingAverage(0), // смак
+    ratingAverage(1), // аромат
+    ratingAverage(2), // насиченість
+    ratingAverage(3), // післясмак
     guard('IFERROR((' + col('G') + '+' + col('H') + '+' + col('I') + '+' + col('J') + ')/4, "")')
   ]]);
   sheet.getRange('E' + first + ':F' + (first + 200)).setNumberFormat('0%');
@@ -451,16 +482,16 @@ function buildAnalysis_(sheet) {
       return '=COUNTIFS(' + inFilter + ', 1, ' + helperRange_(helperCol) + ', "*, ' + option + ',*")';
     };
   };
-  var equals = function (header) {
+  var equals = function (helperCol) {
     return function (option) {
-      return '=COUNTIFS(' + inFilter + ', 1, ' + respRange_(header) + ', "' + option + '")';
+      return '=COUNTIFS(' + inFilter + ', 1, ' + helperRange_(helperCol) + ', "' + option + '")';
     };
   };
   block('Що сподобалось', LIKED, contains(HELPER.liked));
   block('Чого не вистачає / що змінити', MISSING, contains(HELPER.missing));
   block("Як п'ють каву (набори на 3)", DRINK, contains(HELPER.drink));
-  block('Чи купили б (набори на 3)', WOULD_BUY, equals('Чи купив би'));
-  block('Ціна за 250 г (набори на 3)', PRICE, equals('Ціна за 250 г'));
+  block('Чи купили б (набори на 3)', WOULD_BUY, equals(HELPER.wouldBuy));
+  block('Ціна за 250 г (набори на 3)', PRICE, equals(HELPER.price));
 
   // Responses per recipient type, ignoring the filters.
   sheet.getRange(r, side, 1, 2).setValues([['Відповіді за типом отримувача (без фільтрів)', 'Відповідей']])
@@ -559,6 +590,7 @@ function doPost(e) {
     if (hasResponse_(code)) return json_({ ok: false, error: 'already_answered' });
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.responses);
     ensureRows_(sheet, sheet.getLastRow() + 1);
+    syncHelperSize_(SpreadsheetApp.getActiveSpreadsheet());
     var target = sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length);
     target.offset(0, 1, 1, 1).setNumberFormat('@');
     target.setValues([row]);
