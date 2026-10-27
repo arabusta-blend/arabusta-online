@@ -3,20 +3,302 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arabusta Online</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@700&display=swap">
-  <link rel="stylesheet" href="styles.css">
+  <meta name="theme-color" content="#f7f1e8">
+  <title>ARABUSTA — дегустація</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@700&family=Cinzel:wght@700&display=swap">
+  <!-- Bump ?v= on every CSS/JS change so browsers do not serve a stale cached copy -->
+  <link rel="stylesheet" href="styles.css?v=10">
+  <script src="app.js?v=15" defer></script>
 </head>
 <body>
-  <div class="container">
-    <div class="icon">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-      </svg>
-    </div>
-    <h1>Форма в розробці</h1>
-    <p>Ми працюємо над створенням форми для опитувань. Скоро тут з'явиться щось цікаве.</p>    
-  </div>
+  <main class="app">
+    <!-- Visible only while SCRIPT_URL in app.js is empty -->
+    <p class="demo-banner" id="demo-banner" hidden>Демо-режим: відповіді не зберігаються</p>
+
+    <!-- Screen 1. Start -->
+    <section class="screen screen--start" id="screen-start">
+      <img class="logo-img" src="assets/logo.webp" width="440" height="440" alt="ARABUSTA COFFEE">
+      <h1>Дегустація нових купажів</h1>
+      <div class="intro">
+        <p>Ми створюємо каву, яка повинна подобатися вам, а не лише нам, тому <strong class="intro__accent">ВАША ДУМКА МАЄ ЗНАЧЕННЯ!</strong></p>
+        <p>Просимо чесно та об'єктивно оцінити зразки кави з Вашого набору — це займе до 2 хвилин.
+          Ваші враження допоможуть нам обрати найкращі купажі ARABUSTA.</p>
+        <p>Дякуємо, що допомагаєте нам ставати кращими!</p>
+        <p class="intro__note">P.S. Реєстрація не потрібна</p>
+      </div>
+      <button type="button" class="btn btn--primary" data-action="start">Оцінити каву</button>
+    </section>
+
+    <form class="survey" id="survey" novalidate>
+
+      <!-- Screen 2. Set code (4 digits printed on the box) -->
+      <section class="screen" id="screen-test-id">
+        <header class="screen__header screen__header--center">
+          <div class="logo" aria-hidden="true"><span class="logo__name">ARABUSTA</span></div>
+        </header>
+        <h2>Номер набору</h2>
+        <div class="field">
+          <label class="field__label" for="test-id">Введіть, будь ласка, номер з коробки</label>
+          <input class="input input--code" type="text" id="test-id" name="test_id"
+                 inputmode="numeric" maxlength="12" autocomplete="off"
+                 spellcheck="false" required aria-describedby="test-id-error">
+          <p class="field__error" id="test-id-error" aria-live="polite"></p>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn--primary" data-action="next">Далі</button>
+        </div>
+      </section>
+
+      <!-- Screen 3. Survey (recipient type and place come from the admin sheet by set number) -->
+      <section class="screen" id="screen-survey">
+        <header class="screen__header">
+          <button type="button" class="btn-back" data-action="back">← Назад</button>
+          <span class="badge" data-test-id-label>0000</span>
+        </header>
+
+        <!-- Survey for the 3-sample set (3 samples listed in the «Набори» sheet) -->
+        <fieldset class="set" id="set-3">
+          <legend class="set__title">Набір із 3 зразків</legend>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Який зразок сподобався найбільше? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№01"><span>№01</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№02"><span>№02</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№03"><span>№03</span></label>
+              <label class="option"><input type="checkbox" name="favorite" value="Не можу визначитися" data-exclusive><span>Не можу визначитися</span></label>
+              <label class="option"><input type="checkbox" name="favorite" value="Жоден" data-none data-exclusive><span>Жоден</span></label>
+            </div>
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Який зразок Ви б купили? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№01"><span>№01</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№02"><span>№02</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№03"><span>№03</span></label>
+              <label class="option"><input type="checkbox" name="buy" value="Жоден" data-exclusive><span>Жоден</span></label>
+            </div>
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Що саме Вам сподобалося? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option"><input type="checkbox" name="liked" value="Аромат"><span>Аромат</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Смак"><span>Смак</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Насиченість"><span>Насиченість</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="М'якість"><span>М'якість</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Крема"><span>Крема</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Післясмак"><span>Післясмак</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Інше" data-other><span>Інше</span></label>
+            </div>
+            <input class="input input--other" type="text" name="liked_other" placeholder="Що саме?" aria-label="Інше: що саме сподобалося">
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Чого, на Вашу думку, не вистачає? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option"><input type="checkbox" name="missing" value="Більше аромату"><span>Більше аромату</span></label>
+              <label class="option"><input type="checkbox" name="missing" value="Більше насиченості"><span>Більше насиченості</span></label>
+              <label class="option"><input type="checkbox" name="missing" value="Більше крема"><span>Більше крема</span></label>
+              <label class="option"><input type="checkbox" name="missing" value="Менше гіркоти"><span>Менше гіркоти</span></label>
+              <label class="option"><input type="checkbox" name="missing" value="Менше кислинки"><span>Менше кислинки</span></label>
+              <label class="option"><input type="checkbox" name="missing" value="Більше солодкості"><span>Більше солодкості</span></label>
+              <label class="option"><input type="checkbox" name="missing" value="Нічого" data-exclusive><span>Нічого</span></label>
+              <label class="option"><input type="checkbox" name="missing" value="Інше" data-other><span>Інше</span></label>
+            </div>
+            <input class="input input--other" type="text" name="missing_other" placeholder="Чого саме?" aria-label="Інше: чого не вистачає">
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Як Ви зазвичай п'єте каву? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option"><input type="checkbox" name="drink" value="Еспресо"><span>Еспресо</span></label>
+              <label class="option"><input type="checkbox" name="drink" value="Американо"><span>Американо</span></label>
+              <label class="option"><input type="checkbox" name="drink" value="Капучино"><span>Капучино</span></label>
+              <label class="option"><input type="checkbox" name="drink" value="Лате"><span>Лате</span></label>
+              <label class="option"><input type="checkbox" name="drink" value="Інше" data-other><span>Інше</span></label>
+            </div>
+            <input class="input input--other" type="text" name="drink_other" placeholder="Як саме?" aria-label="Інше: як п'єте каву">
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Чи купили б Ви таку каву?</legend>
+            <div class="options">
+              <label class="option"><input type="radio" name="would_buy" value="Так"><span>Так</span></label>
+              <label class="option"><input type="radio" name="would_buy" value="Скоріше так"><span>Скоріше так</span></label>
+              <label class="option"><input type="radio" name="would_buy" value="Можливо"><span>Можливо</span></label>
+              <label class="option"><input type="radio" name="would_buy" value="Скоріше ні"><span>Скоріше ні</span></label>
+              <label class="option"><input type="radio" name="would_buy" value="Ні"><span>Ні</span></label>
+            </div>
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Яка ціна за 250 г для Вас виглядає нормальною?</legend>
+            <div class="options options--stack">
+              <label class="option"><input type="radio" name="price" value="200–250 грн"><span>200–250 грн</span></label>
+              <label class="option"><input type="radio" name="price" value="250–300 грн"><span>250–300 грн</span></label>
+              <label class="option"><input type="radio" name="price" value="300–350 грн"><span>300–350 грн</span></label>
+              <label class="option"><input type="radio" name="price" value="350–400 грн"><span>350–400 грн</span></label>
+              <label class="option"><input type="radio" name="price" value="Понад 400 грн"><span>Понад 400 грн</span></label>
+            </div>
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <!-- Shown only when "Жоден" (none) is chosen in the first question -->
+          <div class="field" data-show-if-none>
+            <label class="field__label" for="wish">Яку каву Ви хотіли б отримати? Що варто змінити? <span class="optional">необов'язково</span></label>
+            <textarea class="input textarea" id="wish" name="wish" rows="3"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="advice">Що б Ви порадили ARABUSTA? <span class="optional">необов'язково</span></label>
+            <textarea class="input textarea" id="advice" name="advice" rows="3"></textarea>
+          </div>
+        </fieldset>
+
+        <!-- Survey for the 5-sample set (5 samples listed in the «Набори» sheet) -->
+        <fieldset class="set" id="set-5">
+          <legend class="set__title">Набір із 5 зразків</legend>
+
+          <p class="lead">Оцініть кожен зразок за шкалою від 1 (слабко) до 5 (відмінно).</p>
+
+          <div class="samples">
+            <!-- Sample cards №01–№05: field names s{N}_taste, s{N}_aroma, s{N}_body, s{N}_finish -->
+            <fieldset class="sample-card" data-required>
+              <legend class="sample-card__title">Зразок №01</legend>
+              <div class="rating" role="radiogroup" aria-label="№01 — смак"><span class="rating__label">Смак</span><div class="rating__scale"><label><input type="radio" name="s1_taste" value="1"><span>1</span></label><label><input type="radio" name="s1_taste" value="2"><span>2</span></label><label><input type="radio" name="s1_taste" value="3"><span>3</span></label><label><input type="radio" name="s1_taste" value="4"><span>4</span></label><label><input type="radio" name="s1_taste" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№01 — аромат"><span class="rating__label">Аромат</span><div class="rating__scale"><label><input type="radio" name="s1_aroma" value="1"><span>1</span></label><label><input type="radio" name="s1_aroma" value="2"><span>2</span></label><label><input type="radio" name="s1_aroma" value="3"><span>3</span></label><label><input type="radio" name="s1_aroma" value="4"><span>4</span></label><label><input type="radio" name="s1_aroma" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№01 — насиченість"><span class="rating__label">Насиченість</span><div class="rating__scale"><label><input type="radio" name="s1_body" value="1"><span>1</span></label><label><input type="radio" name="s1_body" value="2"><span>2</span></label><label><input type="radio" name="s1_body" value="3"><span>3</span></label><label><input type="radio" name="s1_body" value="4"><span>4</span></label><label><input type="radio" name="s1_body" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№01 — післясмак"><span class="rating__label">Післясмак</span><div class="rating__scale"><label><input type="radio" name="s1_finish" value="1"><span>1</span></label><label><input type="radio" name="s1_finish" value="2"><span>2</span></label><label><input type="radio" name="s1_finish" value="3"><span>3</span></label><label><input type="radio" name="s1_finish" value="4"><span>4</span></label><label><input type="radio" name="s1_finish" value="5"><span>5</span></label></div></div>
+              <p class="field__error" aria-live="polite"></p>
+            </fieldset>
+
+            <fieldset class="sample-card" data-required>
+              <legend class="sample-card__title">Зразок №02</legend>
+              <div class="rating" role="radiogroup" aria-label="№02 — смак"><span class="rating__label">Смак</span><div class="rating__scale"><label><input type="radio" name="s2_taste" value="1"><span>1</span></label><label><input type="radio" name="s2_taste" value="2"><span>2</span></label><label><input type="radio" name="s2_taste" value="3"><span>3</span></label><label><input type="radio" name="s2_taste" value="4"><span>4</span></label><label><input type="radio" name="s2_taste" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№02 — аромат"><span class="rating__label">Аромат</span><div class="rating__scale"><label><input type="radio" name="s2_aroma" value="1"><span>1</span></label><label><input type="radio" name="s2_aroma" value="2"><span>2</span></label><label><input type="radio" name="s2_aroma" value="3"><span>3</span></label><label><input type="radio" name="s2_aroma" value="4"><span>4</span></label><label><input type="radio" name="s2_aroma" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№02 — насиченість"><span class="rating__label">Насиченість</span><div class="rating__scale"><label><input type="radio" name="s2_body" value="1"><span>1</span></label><label><input type="radio" name="s2_body" value="2"><span>2</span></label><label><input type="radio" name="s2_body" value="3"><span>3</span></label><label><input type="radio" name="s2_body" value="4"><span>4</span></label><label><input type="radio" name="s2_body" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№02 — післясмак"><span class="rating__label">Післясмак</span><div class="rating__scale"><label><input type="radio" name="s2_finish" value="1"><span>1</span></label><label><input type="radio" name="s2_finish" value="2"><span>2</span></label><label><input type="radio" name="s2_finish" value="3"><span>3</span></label><label><input type="radio" name="s2_finish" value="4"><span>4</span></label><label><input type="radio" name="s2_finish" value="5"><span>5</span></label></div></div>
+              <p class="field__error" aria-live="polite"></p>
+            </fieldset>
+
+            <fieldset class="sample-card" data-required>
+              <legend class="sample-card__title">Зразок №03</legend>
+              <div class="rating" role="radiogroup" aria-label="№03 — смак"><span class="rating__label">Смак</span><div class="rating__scale"><label><input type="radio" name="s3_taste" value="1"><span>1</span></label><label><input type="radio" name="s3_taste" value="2"><span>2</span></label><label><input type="radio" name="s3_taste" value="3"><span>3</span></label><label><input type="radio" name="s3_taste" value="4"><span>4</span></label><label><input type="radio" name="s3_taste" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№03 — аромат"><span class="rating__label">Аромат</span><div class="rating__scale"><label><input type="radio" name="s3_aroma" value="1"><span>1</span></label><label><input type="radio" name="s3_aroma" value="2"><span>2</span></label><label><input type="radio" name="s3_aroma" value="3"><span>3</span></label><label><input type="radio" name="s3_aroma" value="4"><span>4</span></label><label><input type="radio" name="s3_aroma" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№03 — насиченість"><span class="rating__label">Насиченість</span><div class="rating__scale"><label><input type="radio" name="s3_body" value="1"><span>1</span></label><label><input type="radio" name="s3_body" value="2"><span>2</span></label><label><input type="radio" name="s3_body" value="3"><span>3</span></label><label><input type="radio" name="s3_body" value="4"><span>4</span></label><label><input type="radio" name="s3_body" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№03 — післясмак"><span class="rating__label">Післясмак</span><div class="rating__scale"><label><input type="radio" name="s3_finish" value="1"><span>1</span></label><label><input type="radio" name="s3_finish" value="2"><span>2</span></label><label><input type="radio" name="s3_finish" value="3"><span>3</span></label><label><input type="radio" name="s3_finish" value="4"><span>4</span></label><label><input type="radio" name="s3_finish" value="5"><span>5</span></label></div></div>
+              <p class="field__error" aria-live="polite"></p>
+            </fieldset>
+
+            <fieldset class="sample-card" data-required>
+              <legend class="sample-card__title">Зразок №04</legend>
+              <div class="rating" role="radiogroup" aria-label="№04 — смак"><span class="rating__label">Смак</span><div class="rating__scale"><label><input type="radio" name="s4_taste" value="1"><span>1</span></label><label><input type="radio" name="s4_taste" value="2"><span>2</span></label><label><input type="radio" name="s4_taste" value="3"><span>3</span></label><label><input type="radio" name="s4_taste" value="4"><span>4</span></label><label><input type="radio" name="s4_taste" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№04 — аромат"><span class="rating__label">Аромат</span><div class="rating__scale"><label><input type="radio" name="s4_aroma" value="1"><span>1</span></label><label><input type="radio" name="s4_aroma" value="2"><span>2</span></label><label><input type="radio" name="s4_aroma" value="3"><span>3</span></label><label><input type="radio" name="s4_aroma" value="4"><span>4</span></label><label><input type="radio" name="s4_aroma" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№04 — насиченість"><span class="rating__label">Насиченість</span><div class="rating__scale"><label><input type="radio" name="s4_body" value="1"><span>1</span></label><label><input type="radio" name="s4_body" value="2"><span>2</span></label><label><input type="radio" name="s4_body" value="3"><span>3</span></label><label><input type="radio" name="s4_body" value="4"><span>4</span></label><label><input type="radio" name="s4_body" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№04 — післясмак"><span class="rating__label">Післясмак</span><div class="rating__scale"><label><input type="radio" name="s4_finish" value="1"><span>1</span></label><label><input type="radio" name="s4_finish" value="2"><span>2</span></label><label><input type="radio" name="s4_finish" value="3"><span>3</span></label><label><input type="radio" name="s4_finish" value="4"><span>4</span></label><label><input type="radio" name="s4_finish" value="5"><span>5</span></label></div></div>
+              <p class="field__error" aria-live="polite"></p>
+            </fieldset>
+
+            <fieldset class="sample-card" data-required>
+              <legend class="sample-card__title">Зразок №05</legend>
+              <div class="rating" role="radiogroup" aria-label="№05 — смак"><span class="rating__label">Смак</span><div class="rating__scale"><label><input type="radio" name="s5_taste" value="1"><span>1</span></label><label><input type="radio" name="s5_taste" value="2"><span>2</span></label><label><input type="radio" name="s5_taste" value="3"><span>3</span></label><label><input type="radio" name="s5_taste" value="4"><span>4</span></label><label><input type="radio" name="s5_taste" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№05 — аромат"><span class="rating__label">Аромат</span><div class="rating__scale"><label><input type="radio" name="s5_aroma" value="1"><span>1</span></label><label><input type="radio" name="s5_aroma" value="2"><span>2</span></label><label><input type="radio" name="s5_aroma" value="3"><span>3</span></label><label><input type="radio" name="s5_aroma" value="4"><span>4</span></label><label><input type="radio" name="s5_aroma" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№05 — насиченість"><span class="rating__label">Насиченість</span><div class="rating__scale"><label><input type="radio" name="s5_body" value="1"><span>1</span></label><label><input type="radio" name="s5_body" value="2"><span>2</span></label><label><input type="radio" name="s5_body" value="3"><span>3</span></label><label><input type="radio" name="s5_body" value="4"><span>4</span></label><label><input type="radio" name="s5_body" value="5"><span>5</span></label></div></div>
+              <div class="rating" role="radiogroup" aria-label="№05 — післясмак"><span class="rating__label">Післясмак</span><div class="rating__scale"><label><input type="radio" name="s5_finish" value="1"><span>1</span></label><label><input type="radio" name="s5_finish" value="2"><span>2</span></label><label><input type="radio" name="s5_finish" value="3"><span>3</span></label><label><input type="radio" name="s5_finish" value="4"><span>4</span></label><label><input type="radio" name="s5_finish" value="5"><span>5</span></label></div></div>
+              <p class="field__error" aria-live="polite"></p>
+            </fieldset>
+          </div>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Який зразок сподобався найбільше? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№01"><span>№01</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№02"><span>№02</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№03"><span>№03</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№04"><span>№04</span></label>
+              <label class="option option--sample"><input type="checkbox" name="favorite" value="№05"><span>№05</span></label>
+              <label class="option"><input type="checkbox" name="favorite" value="Не можу визначитися" data-exclusive><span>Не можу визначитися</span></label>
+              <label class="option"><input type="checkbox" name="favorite" value="Жоден" data-exclusive><span>Жоден</span></label>
+            </div>
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Який зразок Ви б купили? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№01"><span>№01</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№02"><span>№02</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№03"><span>№03</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№04"><span>№04</span></label>
+              <label class="option option--sample"><input type="checkbox" name="buy" value="№05"><span>№05</span></label>
+              <label class="option"><input type="checkbox" name="buy" value="Жоден" data-exclusive><span>Жоден</span></label>
+            </div>
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Що сподобалося найбільше? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option"><input type="checkbox" name="liked" value="Аромат"><span>Аромат</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Смак"><span>Смак</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Насиченість"><span>Насиченість</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="М'якість"><span>М'якість</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Крема"><span>Крема</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Післясмак"><span>Післясмак</span></label>
+              <label class="option"><input type="checkbox" name="liked" value="Інше" data-other><span>Інше</span></label>
+            </div>
+            <input class="input input--other" type="text" name="liked_other" placeholder="Що саме?" aria-label="Інше: що сподобалося">
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="question" data-required>
+            <legend class="question__title">Що варто змінити? <span class="hint">можна кілька</span></legend>
+            <div class="options">
+              <label class="option"><input type="checkbox" name="change" value="Більше аромату"><span>Більше аромату</span></label>
+              <label class="option"><input type="checkbox" name="change" value="Більше насиченості"><span>Більше насиченості</span></label>
+              <label class="option"><input type="checkbox" name="change" value="Більше крема"><span>Більше крема</span></label>
+              <label class="option"><input type="checkbox" name="change" value="Менше гіркоти"><span>Менше гіркоти</span></label>
+              <label class="option"><input type="checkbox" name="change" value="Менше кислинки"><span>Менше кислинки</span></label>
+              <label class="option"><input type="checkbox" name="change" value="Більше солодкості"><span>Більше солодкості</span></label>
+              <label class="option"><input type="checkbox" name="change" value="Нічого" data-exclusive><span>Нічого</span></label>
+              <label class="option"><input type="checkbox" name="change" value="Інше" data-other><span>Інше</span></label>
+            </div>
+            <input class="input input--other" type="text" name="change_other" placeholder="Що саме?" aria-label="Інше: що змінити">
+            <p class="field__error" aria-live="polite"></p>
+          </fieldset>
+
+          <div class="field">
+            <label class="field__label" for="comment">Коментар <span class="optional">необов'язково</span></label>
+            <textarea class="input textarea" id="comment" name="comment" rows="3"></textarea>
+          </div>
+        </fieldset>
+
+        <p class="form-status" id="form-status" aria-live="polite"></p>
+        <div class="actions">
+          <button type="submit" class="btn btn--primary">Надіслати</button>
+        </div>
+      </section>
+
+    </form>
+
+    <!-- Screen 4. Thank you -->
+    <section class="screen screen--start" id="screen-thanks">
+      <img class="logo-img" src="assets/logo.webp" width="440" height="440" alt="ARABUSTA COFFEE">
+      <h1>Дякуємо!</h1>
+      <p class="lead">Ваші відповіді збережено. Вони допоможуть нам обрати найкращий купаж.</p>
+    </section>
+
+  </main>
 </body>
 </html>
