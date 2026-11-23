@@ -135,15 +135,34 @@ function setup() {
   withEnglishLocale_(setup_);
 }
 
-// Rewrites only formulas and formats («Набори» counters, «Аналіз», hidden helper) without
-// touching data. Run after a script update or if formulas show #ERROR!.
+// Rewrites only formulas, formats and dropdown rules («Набори», «Аналіз», hidden helper) without
+// touching data. Run after a script update, if formulas show #ERROR!, or if a list in «Аналіз»
+// or a «Набори» dropdown misses an entry (e.g. after rows were inserted or moved in «Зразки»).
 function repairFormulas() {
   withEnglishLocale_(function () {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sets = ss.getSheetByName(SHEETS.sets);
     formatResponses_(ss.getSheetByName(SHEETS.responses));
-    writeSetFormulas_(ss.getSheetByName(SHEETS.sets));
+    writeSetDropdowns_(sets, ss.getSheetByName(SHEETS.samples));
+    writeSetFormulas_(sets);
     buildAnalysisSheets_();
   });
+}
+
+// «Зразок 1…5» pick from «Зразки» column A; «Тип отримувача» from RECIPIENT_TYPES.
+// A range rule shifts like any reference when rows in «Зразки» move, so repairFormulas re-applies it.
+function writeSetDropdowns_(sets, samplesSheet) {
+  var sampleRule = SpreadsheetApp.newDataValidation()
+    .requireValueInRange(samplesSheet.getRange('A2:A'), true)
+    .setAllowInvalid(false)
+    .build();
+  sets.getRange(2, SET_COL.firstSample, SET_ROWS, MAX_SAMPLES).setDataValidation(sampleRule);
+
+  var recipientRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(RECIPIENT_TYPES, true)
+    .setAllowInvalid(false)
+    .build();
+  sets.getRange(2, SET_COL.recipientType, SET_ROWS, 1).setDataValidation(recipientRule);
 }
 
 // Formulas below use English function names and comma separators. A spreadsheet in a
@@ -220,22 +239,7 @@ function setup_() {
     }));
 
     // Rows prepared for codes added later: dropdowns and formulas already in place.
-    var rows = SET_ROWS;
-
-    // Sample dropdowns: only numbers listed in «Зразки» can be picked.
-    var sampleRule = SpreadsheetApp.newDataValidation()
-      .requireValueInRange(samplesSheet.getRange('A2:A'), true)
-      .setAllowInvalid(false)
-      .build();
-    sets.getRange(2, SET_COL.firstSample, rows, MAX_SAMPLES).setDataValidation(sampleRule);
-
-    // Recipient type dropdown: the same values the «Аналіз» filter offers.
-    var recipientRule = SpreadsheetApp.newDataValidation()
-      .requireValueInList(RECIPIENT_TYPES, true)
-      .setAllowInvalid(false)
-      .build();
-    sets.getRange(2, SET_COL.recipientType, rows, 1).setDataValidation(recipientRule);
-
+    writeSetDropdowns_(sets, samplesSheet);
     writeSetFormulas_(sets);
     sets.autoResizeColumns(1, SET_HEADERS.length);
   }
@@ -445,7 +449,8 @@ function buildAnalysis_(sheet) {
     return guard('IFERROR((' + sums.join('+') + ')/(' + counts.join('+') + '), "")');
   };
   row.setFormulas([[
-    "=FILTER('" + SHEETS.samples + "'!A2:A, '" + SHEETS.samples + "'!A2:A<>\"\")",
+    // INDIRECT with a text address: inserting, deleting or moving rows in «Зразки» cannot shift it.
+    '=FILTER(INDIRECT("\'' + SHEETS.samples + '\'!A2:A"), INDIRECT("\'' + SHEETS.samples + '\'!A2:A")<>"")',
     guard('COUNTIFS(' + inFilter + ', 1, ' + helperRange_(HELPER.samples) + ', "*, "&' + samples + '&",*")'),
     // Several samples may be named as best / would buy, so count answers that contain the sample.
     guard('COUNTIFS(' + inFilter + ', 1, ' + helperRange_(HELPER.favorite) + ', "*, "&' + samples + '&",*")'),
